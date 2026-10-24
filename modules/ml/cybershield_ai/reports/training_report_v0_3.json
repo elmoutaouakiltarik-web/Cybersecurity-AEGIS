@@ -1,0 +1,262 @@
+{
+  "version": "0.3.0-final",
+  "truth_statement": "Embedded trained models were trained only on the real NSL-KDD rows contained in the provided base package. No demo or synthetic training data was used.",
+  "data_sha256": "371aafb74a9174a98b0081d56d0570b3e081848d2259d44679297a6aa3b8786d",
+  "dataset_rows": 122,
+  "feature_count": 41,
+  "label_counts": {
+    "normal": 52,
+    "neptune": 39,
+    "warezclient": 8,
+    "ipsweep": 4,
+    "portsweep": 4,
+    "back": 4,
+    "satan": 4,
+    "teardrop": 3,
+    "smurf": 3,
+    "nmap": 1
+  },
+  "binary_counts": {
+    "ATTACK": 70,
+    "BENIGN": 52
+  },
+  "family_counts": {
+    "BENIGN": 52,
+    "DoS": 49,
+    "Probe": 13,
+    "R2L": 8
+  },
+  "binary_holdout": {
+    "test_rows": 31,
+    "accuracy": 1.0,
+    "macro_f1": 1.0,
+    "weighted_f1": 1.0,
+    "roc_auc_attack": 1.0,
+    "classification_report": {
+      "ATTACK": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 18.0
+      },
+      "BENIGN": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 13.0
+      },
+      "accuracy": 1.0,
+      "macro avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 31.0
+      },
+      "weighted avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 31.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        13,
+        0
+      ],
+      [
+        0,
+        18
+      ]
+    ],
+    "labels_order": [
+      "BENIGN",
+      "ATTACK"
+    ]
+  },
+  "binary_cv_5fold": {
+    "test_accuracy": [],
+    "test_f1_macro": [],
+    "test_f1_weighted": []
+  },
+  "binary_cv_5fold_mean": {
+    "test_accuracy": NaN,
+    "test_f1_macro": NaN,
+    "test_f1_weighted": NaN
+  },
+  "family_holdout": {
+    "test_rows": 31,
+    "accuracy": 1.0,
+    "macro_f1": 1.0,
+    "weighted_f1": 1.0,
+    "classification_report": {
+      "BENIGN": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 13.0
+      },
+      "DoS": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 13.0
+      },
+      "Probe": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 3.0
+      },
+      "R2L": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 2.0
+      },
+      "accuracy": 1.0,
+      "macro avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 31.0
+      },
+      "weighted avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 31.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        13,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        13,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        3,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        2
+      ]
+    ],
+    "labels_order": [
+      "BENIGN",
+      "DoS",
+      "Probe",
+      "R2L"
+    ]
+  },
+  "family_cv_5fold": {
+    "test_accuracy": [],
+    "test_f1_macro": [],
+    "test_f1_weighted": []
+  },
+  "family_cv_5fold_mean": {
+    "test_accuracy": NaN,
+    "test_f1_macro": NaN,
+    "test_f1_weighted": NaN
+  },
+  "anomaly_training": {
+    "trained_on_benign_rows": 52,
+    "predicted_anomalous_on_all_training_rows": 61,
+    "predicted_benign_like_on_all_training_rows": 61
+  },
+  "top_permutation_features_binary_small_dataset_caveat": [
+    {
+      "feature": "service",
+      "importance_mean": 0.002100117055704731,
+      "importance_std": 0.0036375094423225524
+    },
+    {
+      "feature": "src_bytes",
+      "importance_mean": 0.002100117055704731,
+      "importance_std": 0.0036375094423225524
+    },
+    {
+      "feature": "duration",
+      "importance_mean": 0.0,
+      "importance_std": 0.0
+    },
+    {
+      "feature": "protocol_type",
+      "importance_mean": 0.0,
+      "importance_std": 0.0
+    },
+    {
+      "feature": "flag",
+      "importance_mean": 0.0,
+      "importance_std": 0.0
+    },
+    {
+      "feature": "dst_bytes",
+      "importance_mean": 0.0,
+      "importance_std": 0.0
+    },
+    {
+      "feature": "land",
+      "importance_mean": 0.0,
+      "importance_std": 0.0
+    },
+    {
+      "feature": "wrong_fragment",
+      "importance_mean": 0.0,
+      "importance_std": 0.0
+    },
+    {
+      "feature": "urgent",
+      "importance_mean": 0.0,
+      "importance_std": 0.0
+    },
+    {
+      "feature": "hot",
+      "importance_mean": 0.0,
+      "importance_std": 0.0
+    },
+    {
+      "feature": "num_failed_logins",
+      "importance_mean": 0.0,
+      "importance_std": 0.0
+    },
+    {
+      "feature": "logged_in",
+      "importance_mean": 0.0,
+      "importance_std": 0.0
+    },
+    {
+      "feature": "num_compromised",
+      "importance_mean": 0.0,
+      "importance_std": 0.0
+    },
+    {
+      "feature": "root_shell",
+      "importance_mean": 0.0,
+      "importance_std": 0.0
+    },
+    {
+      "feature": "su_attempted",
+      "importance_mean": 0.0,
+      "importance_std": 0.0
+    }
+  ],
+  "limitations": [
+    "NSL-KDD is historical and not a complete representation of modern enterprise or OT traffic.",
+    "The embedded dataset available in this package has 122 real rows; use scripts/train_on_full_nsl_kdd.py with KDDTrain+.txt/csv for serious training.",
+    "Metrics from small datasets can overestimate real-world performance.",
+    "Never use this model for automatic blocking in OT/ICS without human approval and site validation."
+  ]
+}

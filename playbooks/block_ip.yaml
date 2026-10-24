@@ -1,0 +1,65 @@
+---
+# Cybersecurity-AEGIS SOAR Playbook: Block IP
+# PB-NET-001
+id: PB-NET-001
+name: Block Suspicious IP
+description: |
+  Triggered on high/critical network alerts.
+  Logs, enriches, and optionally blocks the source IP via firewall.
+  Dry-run by default — set dry_run: false for active blocking.
+version: "1.0"
+dry_run: true
+ot_safe: true
+enabled: true
+
+severity_filter:
+  - high
+  - critical
+
+category_filter:
+  - network
+
+trigger_conditions:
+  - severity: [high, critical]
+    category: [network]
+
+actions:
+  - type: log
+    description: "Audit log: suspicious IP detected"
+    params:
+      message: "Suspicious IP alert triggered block_ip playbook"
+
+  - type: enrich
+    description: "Check IP against threat intel feeds"
+    params:
+      check_threat_intel: true
+      check_geo: true
+
+  - type: tag_event
+    description: "Tag for automated triage"
+    params:
+      tags:
+        - auto_reviewed
+        - block_candidate
+
+  - type: send_alert
+    description: "Notify SOC channel"
+    params:
+      channel: soc_email
+      priority: high
+      subject: "AEGIS: Suspicious IP detected — {{source_ip}}"
+
+  - type: block_ip_firewall
+    description: "Temporary 60-minute firewall block (confirmation required)"
+    on_failure: continue
+    params:
+      target: "{{source_ip}}"
+      duration_min: 60
+      note: "Automated block — verify with SOC before extending"
+
+  - type: create_ticket
+    description: "Create incident ticket for tracking"
+    params:
+      severity: "{{severity}}"
+      team: security
+      title: "Suspicious IP blocked: {{source_ip}}"

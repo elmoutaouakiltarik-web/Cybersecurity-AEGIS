@@ -1,0 +1,98 @@
+---
+# Cybersecurity-AEGIS SOAR Playbook: C2 Communication Detected
+# PB-C2-001
+id: PB-C2-001
+name: Command and Control Communication Response
+description: |
+  Response to confirmed or suspected C2 beaconing / communication.
+  Covers: DNS tunneling, beacon to known-bad IP, TOR egress, Cobalt Strike.
+  Maps to MITRE ATT&CK TA0011 Command and Control.
+  Contains automated C2 domain/IP blocking if IOC confirmed.
+version: "1.0"
+dry_run: true
+ot_safe: true
+enabled: true
+
+severity_filter:
+  - high
+  - critical
+
+category_filter:
+  - network
+  - intelligence
+
+trigger_conditions:
+  - title_contains:
+      - c2
+      - command and control
+      - beaconing
+      - dns tunnel
+      - cobalt strike
+      - ioc match
+      - tor exit
+
+actions:
+  - type: log
+    description: "Audit log: C2 communication indicator"
+    params:
+      message: "C2 communication detected — immediate containment advisory"
+
+  - type: enrich
+    description: "Deep TI enrichment on C2 destination"
+    params:
+      check_threat_intel: true
+      check_geo: true
+      check_rdns: true
+      check_abuseipdb: true
+      check_virustotal: false  # requires VT API key
+
+  - type: tag_event
+    description: "Tag C2 event"
+    params:
+      tags:
+        - c2_communication
+        - T1071
+        - ioc_confirmed
+        - containment_candidate
+
+  - type: block_ip_firewall
+    description: "Block C2 destination IP/domain at perimeter"
+    on_failure: continue
+    params:
+      target: "{{destination_ip}}"
+      duration_min: 1440  # 24 hours
+      direction: egress
+      note: "C2 destination block — egress firewall rule"
+      require_approval: false  # Auto-block on confirmed IOC
+
+  - type: send_alert
+    description: "Critical SOC notification"
+    params:
+      channel: soc_email
+      priority: critical
+      subject: "AEGIS C2 ALERT: {{source_ip}} → {{destination_ip}}"
+      body: |
+        Confirmed or suspected C2 communication detected.
+        Source (infected host): {{source_ip}}
+        Destination (C2 server): {{destination_ip}}
+
+        Automated actions taken:
+        - C2 destination blocked at perimeter firewall (dry-run mode)
+
+        Manual actions required:
+        1. Isolate suspected infected host {{source_ip}}
+        2. Run EDR full scan on host
+        3. Collect memory image for forensic analysis
+        4. Review all connections from {{source_ip}} in last 72h
+
+  - type: create_ticket
+    description: "P1 C2 incident ticket"
+    params:
+      severity: critical
+      team: security
+      title: "C2 DETECTED: {{source_ip}} beacon to {{destination_ip}}"
+      priority: P1
+      tags:
+        - c2_detected
+        - active_threat
+        - host_isolation_required

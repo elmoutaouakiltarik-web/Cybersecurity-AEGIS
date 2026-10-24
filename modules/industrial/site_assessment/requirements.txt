@@ -1,0 +1,4 @@
+flask>=2.3
+# Opzionale ma consigliato: cattura live su Windows (con Npcap) e Linux.
+# Senza scapy resta disponibile l'analisi offline dei file pcap/pcapng.
+scapy>=2.5

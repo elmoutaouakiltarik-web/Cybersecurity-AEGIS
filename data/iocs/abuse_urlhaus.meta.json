@@ -1,0 +1,11 @@
+{
+  "feed_id": "abuse_urlhaus",
+  "name": "Abuse.ch URLhaus (malicious URLs)",
+  "kind": "url",
+  "url": "https://urlhaus.abuse.ch/downloads/text/",
+  "fetched_at": "2026-10-20T01:38:05.429812+00:00",
+  "size_bytes": 4548148,
+  "rows": 73138,
+  "description": "Curated malicious URL list \u2014 distribution sites, payload URLs.",
+  "license": "free"
+}

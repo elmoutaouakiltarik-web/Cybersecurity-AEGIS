@@ -1,0 +1,29 @@
+{
+  "_comment": "Adattare nomi e CIDR alla rete reale. Usare con: --zones examples/zones.example.json",
+  "zones": [
+    {
+      "name": "L1 - Controllo linea",
+      "purdue_level": 1,
+      "cidrs": ["192.168.10.0/26"],
+      "description": "PLC, RTU, drive e I/O remoti della linea"
+    },
+    {
+      "name": "L2 - Supervisione",
+      "purdue_level": 2,
+      "cidrs": ["192.168.20.0/26"],
+      "description": "HMI e SCADA di cella, switch industriali"
+    },
+    {
+      "name": "L3 - Operations",
+      "purdue_level": 3,
+      "cidrs": ["192.168.30.0/26"],
+      "description": "Server SCADA, historian, engineering workstation"
+    },
+    {
+      "name": "L4 - Enterprise",
+      "purdue_level": 4,
+      "cidrs": ["192.168.40.0/24"],
+      "description": "Rete office, MES, ERP"
+    }
+  ]
+}

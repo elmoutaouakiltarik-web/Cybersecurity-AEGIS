@@ -1,0 +1,87 @@
+---
+# Cybersecurity-AEGIS SOAR Playbook: Critical CVE / Vulnerability Response
+# PB-VULN-001
+id: PB-VULN-001
+name: Critical CVE Vulnerability Response
+description: |
+  Response to critical (CVSS >= 9.0) vulnerability findings from the scanner.
+  Prioritizes internet-facing services and OT protocol stacks.
+  Maps patching windows to risk score: CVSS 10.0 → 24h, CVSS 9.x → 72h.
+version: "1.0"
+dry_run: true
+ot_safe: true
+enabled: true
+
+severity_filter:
+  - critical
+
+category_filter:
+  - vulnerability
+
+trigger_conditions:
+  - title_contains:
+      - CVE
+      - vuln
+      - critical vulnerability
+      - CVSS 9
+      - CVSS 10
+
+actions:
+  - type: log
+    description: "Audit log: Critical CVE finding"
+    params:
+      message: "Critical vulnerability detected — patch window initiated"
+
+  - type: tag_event
+    description: "Tag CVE for patch tracking"
+    params:
+      tags:
+        - critical_cve
+        - patch_required
+        - vuln_management
+
+  - type: enrich
+    description: "NVD enrichment for CVE details"
+    params:
+      check_nvd: true
+      check_epss: false  # Requires EPSS API
+      check_exploitdb: false
+
+  - type: send_alert
+    description: "Alert vulnerability management team"
+    params:
+      channel: vuln_team
+      priority: critical
+      subject: "AEGIS: Critical CVE on {{target_ip}} — {{cve_id}}"
+      body: |
+        Critical vulnerability detected on monitored host.
+
+        Host: {{target_ip}}:{{target_port}}
+        Service: {{service}}
+        CVE: {{cve_id}}
+        CVSS Score: {{cvss_score}}
+
+        Recommended Patch Window:
+        - CVSS 10.0: 24 hours
+        - CVSS 9.x: 72 hours
+        - CVSS 8.x: 7 days
+
+        If patch not available: Apply compensating controls (WAF, network isolation).
+
+  - type: create_ticket
+    description: "Create patch management ticket"
+    params:
+      severity: critical
+      team: patch_management
+      title: "PATCH REQUIRED: {{cve_id}} on {{target_ip}}"
+      tags:
+        - cve
+        - patch_management
+        - vuln_remediation
+      remediation_steps:
+        - "Verify CVE applicability to exact software version on {{target_ip}}"
+        - "Check vendor advisory for patch availability"
+        - "Apply patch in test environment first"
+        - "Schedule production patch during maintenance window"
+        - "Re-scan after patching to confirm remediation"
+        - "Update CMDB with patch status"

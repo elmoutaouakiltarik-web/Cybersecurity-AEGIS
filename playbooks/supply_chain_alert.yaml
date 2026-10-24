@@ -1,0 +1,95 @@
+---
+# Cybersecurity-AEGIS SOAR Playbook: Supply Chain Compromise Alert
+# PB-SUPPLY-001
+id: PB-SUPPLY-001
+name: Supply Chain Compromise Advisory
+description: |
+  Advisory response to potential software supply chain compromise indicators:
+  - Known-bad package hashes from dependency audit
+  - Malicious update mechanisms
+  - Unexpected binary execution post-software update
+  - SolarWinds / 3CX / XZ Utils-style indicators
+
+  Maps to MITRE ATT&CK T1195 (Supply Chain Compromise).
+version: "1.0"
+dry_run: true
+ot_safe: true
+enabled: true
+
+severity_filter:
+  - high
+  - critical
+
+category_filter:
+  - endpoint
+  - network
+
+trigger_conditions:
+  - title_contains:
+      - supply chain
+      - malicious package
+      - backdoor
+      - build pipeline
+      - dependency confusion
+      - software update
+
+actions:
+  - type: log
+    description: "Audit log: Supply chain compromise indicator"
+    params:
+      message: "Supply chain compromise indicator — affected software catalog review required"
+
+  - type: tag_event
+    description: "Tag supply chain event"
+    params:
+      tags:
+        - supply_chain
+        - T1195
+        - software_integrity_required
+        - ciso_notification
+
+  - type: enrich
+    description: "Hash enrichment against threat intel"
+    params:
+      check_threat_intel: true
+      check_hash: true
+      check_threat_actors: true
+
+  - type: send_alert
+    description: "CISO and DevSecOps notification"
+    params:
+      channel: ciso_confidential
+      secondary_channel: devsecops
+      priority: critical
+      subject: "AEGIS: Supply Chain Compromise Indicator"
+      body: |
+        Supply chain compromise indicator detected.
+
+        Potentially affected software/component: {{title}}
+        Host: {{source_ip}}
+
+        Immediate actions required:
+        1. Identify all systems running the affected software version
+        2. Check software hash against known-good baseline
+        3. Review recent software updates in the last 30 days
+        4. Isolate potentially compromised CI/CD systems
+        5. Contact software vendor for security advisory
+
+  - type: create_ticket
+    description: "Supply chain investigation ticket"
+    params:
+      severity: critical
+      team: devsecops
+      secondary_team: security
+      title: "Supply Chain Alert: {{title}}"
+      tags:
+        - supply_chain
+        - software_integrity
+        - blast_radius_assessment
+      investigation_steps:
+        - "Identify exact software version and affected component"
+        - "Cross-reference against public advisories (NVD, vendor security page)"
+        - "Determine blast radius: how many systems are affected?"
+        - "Check software signing certificates for tampering"
+        - "Review CI/CD build pipeline for unauthorized modifications"
+        - "Contact vendor if not yet public — responsible disclosure protocol"

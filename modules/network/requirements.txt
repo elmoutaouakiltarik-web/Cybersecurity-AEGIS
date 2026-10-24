@@ -1,0 +1,4 @@
+requests>=2.32
+PyYAML>=6.0
+scapy>=2.5; sys_platform != "win32"
+flask>=2.3

@@ -1,0 +1,64 @@
+---
+# Cybersecurity-AEGIS SOAR Playbook: Investigate Anomaly
+# PB-ML-001
+id: PB-ML-001
+name: Investigate ML Anomaly
+description: |
+  Handles ML IDS anomaly detections from CyberShield AI.
+  Performs enrichment, SIEM correlation, and creates investigation ticket.
+  No automated containment — anomalies require analyst review.
+version: "1.0"
+dry_run: true
+ot_safe: true
+enabled: true
+
+severity_filter:
+  - medium
+  - high
+  - critical
+
+trigger_conditions:
+  - source: [cybershield_ai]
+
+actions:
+  - type: log
+    description: "Audit log: ML anomaly detected"
+    params:
+      message: "CyberShield AI anomaly detected — starting investigation workflow"
+
+  - type: enrich
+    description: "Threat intel + SIEM correlation"
+    params:
+      check_threat_intel: true
+      correlate_siem: true
+      check_geo: true
+
+  - type: tag_event
+    description: "Tag for ML anomaly tracking"
+    params:
+      tags:
+        - ml_anomaly
+        - under_investigation
+        - cybershield_v0_3
+
+  - type: send_alert
+    description: "Notify SOC for analyst review"
+    params:
+      channel: soc_email
+      priority: "{{severity}}"
+      subject: "AEGIS ML Anomaly — requires analyst review"
+
+  - type: create_ticket
+    description: "Create investigation ticket with ML context"
+    params:
+      severity: "{{severity}}"
+      team: soc_analysts
+      title: "ML Anomaly: {{title}}"
+      tags:
+        - cybershield_ai
+        - v0_3
+
+  - type: update_status
+    description: "Mark event as under investigation"
+    params:
+      status: investigating

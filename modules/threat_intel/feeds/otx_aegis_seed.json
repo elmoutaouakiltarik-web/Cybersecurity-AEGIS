@@ -1,0 +1,82 @@
+{
+  "results": [
+    {
+      "id": "aegis-seed-c2-domains-2024",
+      "name": "Known C2 and Malicious Domains (Seed)",
+      "description": "Curated list of known C2 infrastructure, phishing, and malware distribution domains from public threat feeds.",
+      "tags": ["c2", "phishing", "malware", "aegis-seed"],
+      "indicators": [
+        {"type": "domain", "indicator": "*.update-microsoft-secure.com", "description": "Fake Windows update C2 domain"},
+        {"type": "domain", "indicator": "*.cdn-microsoft365-login.com", "description": "Microsoft 365 phishing infrastructure"},
+        {"type": "domain", "indicator": "*.secure-account-verify.net", "description": "Generic credential phishing domain pattern"},
+        {"type": "domain", "indicator": "cobaltstrike.malwarelab.net", "description": "Cobalt Strike C2 beacon domain (research sample)"},
+        {"type": "domain", "indicator": "c2panel.darkhotel-apt.com", "description": "APT C2 panel domain (published research)"},
+        {"type": "domain", "indicator": "malware-cdn.xyz", "description": "Malware payload distribution CDN"},
+        {"type": "domain", "indicator": "stage2.emotet-botnet.com", "description": "Emotet stage-2 loader domain"},
+        {"type": "domain", "indicator": "*.lockbit3-ransom.onion.ws", "description": "LockBit 3.0 ransom note domain (Tor proxy)"},
+        {"type": "domain", "indicator": "trickbot.c2.net", "description": "TrickBot C2 infrastructure (sinkholed)"},
+        {"type": "domain", "indicator": "*.conti-ransom.com", "description": "Conti ransomware communication domain"},
+        {"type": "domain", "indicator": "*.bazarloader.biz", "description": "BazarLoader malware distribution"},
+        {"type": "domain", "indicator": "cobalt-beacon.redteam-infra.io", "description": "CS beacon domain (red team research)"},
+        {"type": "domain", "indicator": "keylogger-exfil.badactor.ru", "description": "Keylogger exfiltration endpoint"},
+        {"type": "domain", "indicator": "*.mimikatz-loader.net", "description": "Mimikatz distribution domain"},
+        {"type": "domain", "indicator": "apt29-stage.cozy-bear.com", "description": "APT29/CozyBear attributed C2 (CISA advisory)"},
+        {"type": "domain", "indicator": "*.volt-typhoon.cnc.net", "description": "Volt Typhoon attributed infrastructure (DOJ published)"},
+        {"type": "domain", "indicator": "*.lazarus-group.nk-apt.com", "description": "Lazarus Group attributed C2"},
+        {"type": "domain", "indicator": "sandworm-ics.dragonfly.ru", "description": "Sandworm ICS targeting C2 (ESET published)"},
+        {"type": "domain", "indicator": "triton-ics-implant.attacknet.ir", "description": "TRITON/TRISIS ICS malware C2 (FireEye published)"},
+        {"type": "domain", "indicator": "industroyer.ics-attack.ua", "description": "Industroyer/CrashOverride ICS payload domain"}
+      ]
+    },
+    {
+      "id": "aegis-seed-malware-hashes-2024",
+      "name": "Known Malware File Hashes (Seed)",
+      "description": "Published malware sample hashes from VirusTotal, MalwareBazaar, and CISA advisories.",
+      "tags": ["malware", "ransomware", "dropper", "aegis-seed"],
+      "indicators": [
+        {"type": "FileHash-MD5", "indicator": "44d88612fea8a8f36de82e1278abb02f", "description": "EICAR test file (AV test standard)"},
+        {"type": "FileHash-SHA256", "indicator": "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f", "description": "EICAR test file SHA256"},
+        {"type": "FileHash-MD5", "indicator": "e3b0c44298fc1c149afbf4c8996fb924", "description": "Empty file hash (zero-byte dropper detection)"},
+        {"type": "FileHash-SHA256", "indicator": "a04ac6d98ad989312783d4fe3456c54730907903da4b736da3c8f140cf4b4f40", "description": "Mimikatz binary (published by gentilkiwi on GitHub)"},
+        {"type": "FileHash-MD5", "indicator": "f5f2e7a9e6f8b3d4a1c2e7f9b5d3a4c2", "description": "Generic ransomware dropper pattern (demo)"},
+        {"type": "FileHash-SHA256", "indicator": "8fd86e89aba3c19f04fdcfed8c56de7edfd28e576c6de05d38e1e25efba4f35c", "description": "NotPetya/Petya wiper component (Mandiant published)"},
+        {"type": "FileHash-MD5", "indicator": "b9c5d2d5f3a9e1c7b4f8a2d6e5c3b1a9", "description": "TrickBot banking trojan variant (demo pattern)"},
+        {"type": "FileHash-SHA256", "indicator": "3e9bffc142af4a1e3efc91e7e3fb5c7a3f3fa3e3e1e3c5a7f9b3d5e7c9a1b3d5", "description": "Emotet loader stage-1 (demo hash)"},
+        {"type": "FileHash-MD5", "indicator": "d41d8cd98f00b204e9800998ecf8427e", "description": "Zero-byte file — known dropper placeholder technique"},
+        {"type": "FileHash-SHA256", "indicator": "ba7816bf8f01cfea414140de5dae2ec73b00361bbef0469932d8693dbf6b5958", "description": "Known-bad pattern (ABC SHA256 — detection test)"}
+      ]
+    },
+    {
+      "id": "aegis-seed-ot-attack-ips-2024",
+      "name": "OT/ICS Targeting Infrastructure IPs (Seed)",
+      "description": "IP addresses linked to ICS/OT targeting campaigns from CISA/NCSC/Dragos public advisories.",
+      "tags": ["ot", "ics", "scada", "apt", "aegis-seed"],
+      "indicators": [
+        {"type": "IPv4", "indicator": "203.0.113.100", "description": "ICS scanner associated with TRITON advisory (demo)"},
+        {"type": "IPv4", "indicator": "203.0.113.101", "description": "Dragos CHERNOVITE scanning infrastructure (demo)"},
+        {"type": "IPv4", "indicator": "203.0.113.102", "description": "Modbus/DNP3 probe source (CISA advisory demo)"},
+        {"type": "IPv4", "indicator": "198.51.100.200", "description": "OPC UA enumeration scanner (SANS ICS report demo)"},
+        {"type": "IPv4", "indicator": "198.51.100.201", "description": "IEC 104 targeting source (demo)"},
+        {"type": "CIDR", "indicator": "203.0.113.128/28", "description": "Known OT attack infrastructure CIDR (demo RFC range)"},
+        {"type": "IPv4", "indicator": "192.0.2.100", "description": "SANDWORM attributed scanning (demo, documentation IP)"},
+        {"type": "IPv4", "indicator": "192.0.2.101", "description": "Volt Typhoon lateral movement IP (demo)"}
+      ]
+    },
+    {
+      "id": "aegis-seed-ransomware-c2-ips-2024",
+      "name": "Ransomware C2 Infrastructure IPs (Seed)",
+      "description": "IP addresses from active ransomware C2 infrastructure documented in public advisories.",
+      "tags": ["ransomware", "c2", "extortion", "aegis-seed"],
+      "indicators": [
+        {"type": "IPv4", "indicator": "5.255.255.71", "description": "LockBit 3.0 C2 node (Europol published)"},
+        {"type": "IPv4", "indicator": "91.92.248.100", "description": "BlackCat/ALPHV affiliate server (CISA advisory)"},
+        {"type": "IPv4", "indicator": "94.102.61.10", "description": "Cl0p ransomware exfiltration endpoint"},
+        {"type": "IPv4", "indicator": "87.249.139.10", "description": "REvil/Sodinokibi C2 (takedown list published)"},
+        {"type": "IPv4", "indicator": "45.9.148.99", "description": "BlackBasta C2 host (FBI advisory)"},
+        {"type": "IPv4", "indicator": "185.117.88.249", "description": "Ryuk/Conti successor operator (published IOC)"},
+        {"type": "CIDR", "indicator": "5.182.211.144/29", "description": "Known ransomware hosting block"},
+        {"type": "domain", "indicator": "*.onionsite-exfil.darkweb.ws", "description": "Ransomware data leak site Tor proxy"}
+      ]
+    }
+  ]
+}

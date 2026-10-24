@@ -1,0 +1,96 @@
+---
+# Cybersecurity-AEGIS SOAR Playbook: Insider Threat Detection
+# PB-INSIDER-001
+id: PB-INSIDER-001
+name: Insider Threat Response
+description: |
+  Response to insider threat behavioral indicators:
+  - Unusual data access/download volumes
+  - Access outside normal hours
+  - Privilege abuse or escalation
+  - Mass file deletion or encryption
+  - Unauthorized removable media
+
+  Response is confidential — limited notification scope.
+  All actions require HR and Legal coordination.
+version: "1.0"
+dry_run: true
+ot_safe: true
+enabled: true
+
+severity_filter:
+  - medium
+  - high
+  - critical
+
+category_filter:
+  - endpoint
+  - identity
+
+trigger_conditions:
+  - title_contains:
+      - unusual access
+      - data download
+      - off-hours
+      - privilege abuse
+      - mass deletion
+      - removable media
+
+actions:
+  - type: log
+    description: "Audit log: Insider threat indicator (confidential)"
+    params:
+      message: "CONFIDENTIAL: Insider threat indicator detected — HR/Legal coordination required"
+      confidential: true
+
+  - type: tag_event
+    description: "Tag insider threat (confidential)"
+    params:
+      tags:
+        - insider_threat
+        - confidential
+        - hr_coordination
+        - legal_hold
+
+  - type: send_alert
+    description: "Confidential alert to CISO and HR"
+    params:
+      channel: ciso_confidential
+      priority: high
+      subject: "CONFIDENTIAL — AEGIS: Insider Threat Indicator"
+      body: |
+        CONFIDENTIAL — Do not forward without CISO approval.
+
+        Insider threat behavioral indicator detected.
+        User/Host: {{source_ip}} / {{hostname}}
+        Event: {{title}}
+        Timestamp: {{timestamp}}
+
+        This notification is restricted to: CISO, Legal, HR Director.
+
+        Do NOT alert line managers or IT helpdesk without CISO clearance.
+        Do NOT confront the subject without HR/Legal coordination.
+
+  - type: create_ticket
+    description: "Confidential insider threat investigation ticket"
+    params:
+      severity: high
+      team: ciso_office
+      title: "CONFIDENTIAL — Insider Threat: {{source_ip}}"
+      tags:
+        - insider_threat
+        - confidential
+        - legal_hold
+        - restricted_access
+      investigation_steps:
+        - "CONFIDENTIAL: Preserve all evidence with legal chain of custody"
+        - "Covert monitoring authorization required from legal"
+        - "Do NOT alert subject — maintain operational security"
+        - "Collect: authentication logs, DLP events, email headers (with legal auth)"
+        - "HR coordination: employment contract review, HR policies"
+
+  - type: update_status
+    description: "Mark as confidential investigation"
+    params:
+      status: confidential_investigation
+      restricted: true

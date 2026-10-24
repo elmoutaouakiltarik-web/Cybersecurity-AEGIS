@@ -1,0 +1,2177 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%2322c55e' d='M16 2 4 7v8c0 8 5.4 13.2 12 15 6.6-1.8 12-7 12-15V7L16 2z'/%3E%3Cpath fill='%230b1220' d='M14.2 20.6l-4.4-4.4 1.8-1.8 2.6 2.6 6.2-6.2 1.8 1.8-8 8z'/%3E%3C/svg%3E">
+<title>Cybersecurity-AEGIS Control Room</title>
+<script>
+if (location.protocol === 'file:') {
+  location.replace('http://127.0.0.1:8070/dashboard/' + (location.hash || ''));
+}
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --bg: #0b0d12;
+  --surface: #12151c;
+  --surface-2: #1a1f28;
+  --surface-3: #222835;
+  --border: #2a3040;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --accent-green: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --accent-cyan: #06b6d4;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+body.light {
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text-muted: #64748b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+#app {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  grid-template-rows: 60px 1fr;
+  height: 100vh;
+}
+#sidebar {
+  grid-row: 1 / -1;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+.brand {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+.brand i { color: var(--accent-green); font-size: 22px; }
+.brand span { font-weight: 700; font-size: 16px; letter-spacing: .3px; }
+.nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 0;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: .15s;
+  border-left: 3px solid transparent;
+}
+.nav-item:hover, .nav-item.active {
+  background: rgba(128,128,128,.06);
+  color: var(--text);
+  border-left-color: var(--accent-green);
+}
+.nav-item i { width: 22px; text-align: center; font-size: 15px; }
+.nav-item span { font-size: 13.5px; font-weight: 500; }
+#topbar {
+  grid-column: 2;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  gap: 12px;
+}
+.top-left { display:flex; align-items:center; gap:16px; }
+.top-left h1 { font-size: 15px; font-weight: 600; }
+.health-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green);
+  box-shadow: 0 0 8px var(--accent-green);
+}
+.health-dot.warn { background: var(--accent-amber); box-shadow: 0 0 8px var(--accent-amber); }
+.health-dot.crit { background: var(--accent-red); box-shadow: 0 0 8px var(--accent-red); }
+#connBanner { font-size: 11px; padding: 3px 10px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); display: none; }
+#connBanner.offline { display: inline-flex; align-items: center; gap: 6px; background: rgba(239,68,68,0.12); border-color: var(--accent-red); color: var(--accent-red); }
+#connBanner.online { display: inline-flex; align-items: center; gap: 6px; background: rgba(16,185,129,0.12); border-color: var(--accent-green); color: var(--accent-green); }
+.top-right { display:flex; align-items:center; gap:14px; font-size: 12px; color: var(--text-muted); }
+.top-center { flex:1; max-width:420px; position:relative; }
+.top-center input {
+  width:100%; background: var(--surface-2); border:1px solid var(--border); color: var(--text);
+  padding: 7px 12px 7px 34px; border-radius: 8px; font-size: 12.5px;
+}
+.top-center i { position:absolute; left:11px; top:50%; transform:translateY(-50%); color: var(--text-muted); font-size:12px; }
+.threat-pill {
+  background: var(--surface-2); border: 1px solid var(--border); padding: 4px 12px;
+  border-radius: 20px; font-weight: 600; color: var(--text); white-space:nowrap;
+}
+#main-content {
+  grid-column: 2;
+  overflow-y: auto;
+  padding: 24px;
+}
+.page { display: none; }
+.page.active { display: block; animation: fadeIn .25s ease; }
+@keyframes fadeIn { from { opacity:0; transform: translateY(6px);} to { opacity:1; transform:none;} }
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.kpi-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--text-muted); }
+.kpi-value { font-size: 28px; font-weight: 700; }
+.kpi-hint { font-size: 11px; color: var(--text-muted); }
+.kpi-icon { align-self: flex-end; font-size: 20px; opacity: .35; margin-top: -28px; }
+
+.panel {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px; flex-wrap: wrap;
+}
+.panel-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.panel-title i { color: var(--accent-cyan); }
+
+.btn {
+  background: var(--surface-3); border: 1px solid var(--border); color: var(--text);
+  padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;
+  transition: .15s; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:hover { background: var(--border); }
+.btn.primary { background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; }
+.btn.primary:hover { opacity: .9; }
+.btn.danger { background: var(--accent-red); border-color: var(--accent-red); color: #fff; }
+.btn.success { background: var(--accent-green); border-color: var(--accent-green); color: #fff; }
+
+.chart-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: 16px; margin-bottom: 16px; align-items: stretch; }
+.chart-cell { min-height: 320px; height: 320px; overflow: hidden; display: flex; flex-direction: column; }
+.chart-cell canvas { width: 100% !important; height: 246px !important; max-height: 246px !important; display: block; }
+.kpi-chart { min-height: 260px; height: 260px; overflow: hidden; display: flex; flex-direction: column; }
+.kpi-chart canvas { width: 100% !important; height: 200px !important; max-height: 200px !important; display: block; }
+
+.table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.table th { text-align: left; padding: 10px 12px; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+.table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+.table tr:hover td { background: rgba(128,128,128,.04); }
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;
+}
+.badge.critical { background: rgba(239,68,68,.15); color: var(--accent-red); }
+.badge.high { background: rgba(245,158,11,.15); color: var(--accent-amber); }
+.badge.medium { background: rgba(59,130,246,.15); color: var(--accent-blue); }
+.badge.low { background: rgba(16,185,129,.15); color: var(--accent-green); }
+.badge.info { background: rgba(148,163,184,.15); color: var(--text-muted); }
+
+.event-stream {
+  max-height: 340px; overflow-y: auto;
+}
+.event-row {
+  display: grid; grid-template-columns: 28px 80px 1fr 100px 60px;
+  align-items: center; gap: 10px; padding: 8px 10px;
+  border-bottom: 1px solid var(--border); font-size: 12px; cursor: pointer;
+}
+.event-row:hover { background: rgba(128,128,128,.04); }
+.event-time { color: var(--text-muted); font-size: 11px; }
+.event-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.event-cat { color: var(--text-muted); font-size: 11px; text-align: right; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.gauge-container { position: relative; width: 140px; height: 70px; margin: 0 auto; }
+.gauge-value { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: 700; }
+
+.form-row { display: flex; gap: 10px; margin-bottom: 10px; }
+input, select, textarea {
+  background: var(--surface-3); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 12px; border-radius: 6px; font-size: 13px; flex: 1;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent-blue); }
+
+.muted { color: var(--text-muted); font-size: 12px; }
+
+/* Skeleton */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-3) 25%, var(--surface-2) 50%, var(--surface-3) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 6px;
+  display: inline-block;
+  min-width: 40px;
+  min-height: 1em;
+}
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* Empty state */
+.empty-state { text-align:center; padding: 40px 20px; color: var(--text-muted); }
+.empty-state i { font-size: 40px; opacity: .3; margin-bottom: 12px; display:block; }
+
+/* Login overlay */
+#loginOverlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.7); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+}
+.login-box {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 32px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+.login-box h2 { margin-bottom: 8px; font-size: 20px; }
+.login-box p { color: var(--text-muted); font-size: 13px; margin-bottom: 18px; }
+.login-box input { width: 100%; margin-bottom: 12px; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 5000;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.modal-overlay.active { opacity: 1; pointer-events: auto; }
+.modal-box {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  width: 90%; max-width: 720px; max-height: 90vh; overflow-y: auto;
+  padding: 24px; transform: translateY(10px); transition: transform .2s;
+}
+.modal-overlay.active .modal-box { transform: translateY(0); }
+.modal-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+.modal-header h3 { font-size: 16px; }
+.modal-close { background:none; border:none; color: var(--text-muted); font-size:18px; cursor:pointer; }
+.modal-close:hover { color: var(--text); }
+.modal-section { margin-bottom: 14px; }
+.modal-section h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 6px; }
+pre.raw-json {
+  background: var(--surface-3); padding: 10px; border-radius: 8px; font-size: 11.5px;
+  overflow-x: auto; max-height: 220px;
+}
+
+/* MITRE matrix */
+.mitre-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.mitre-cell {
+  background: var(--surface-3); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px; text-align: center; font-size: 11px; cursor: default; transition: .15s;
+}
+.mitre-cell:hover { border-color: var(--accent-blue); }
+.mitre-cell .tech-id { font-weight: 700; font-size: 11px; display:block; margin-bottom:4px; }
+.mitre-cell .tech-count { font-size: 10px; color: var(--text-muted); }
+
+/* Toast */
+#toastContainer {
+  position: fixed; top: 16px; right: 16px; z-index: 6000;
+  display: flex; flex-direction: column; gap: 8px; width: 320px; pointer-events: none;
+}
+.toast {
+  background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent-blue);
+  border-radius: 8px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  font-size: 12.5px; animation: toastIn .3s ease; pointer-events: auto; cursor: default;
+}
+.toast.critical { border-left-color: var(--accent-red); }
+.toast.high { border-left-color: var(--accent-amber); }
+.toast.success { border-left-color: var(--accent-green); }
+@keyframes toastIn { from { opacity:0; transform: translateX(20px);} to { opacity:1; transform:none;} }
+.toast-title { font-weight: 700; margin-bottom: 2px; }
+.toast-body { color: var(--text-muted); }
+
+/* Search dropdown */
+#searchDropdown {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.5); max-height: 320px; overflow-y: auto;
+  display: none; z-index: 3000;
+}
+#searchDropdown.active { display: block; }
+.search-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border-bottom: 1px solid var(--border); cursor: pointer; font-size: 12px;
+}
+.search-item:hover { background: rgba(128,128,128,.04); }
+.search-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* Mobile menu */
+#hamburgerBtn { display:none; background:none; border:none; color: var(--text); font-size:18px; cursor:pointer; }
+#mobileMenu {
+  position: fixed; inset: 0; z-index: 4000; background: var(--surface); display:none; flex-direction: column;
+}
+#mobileMenu.active { display: flex; }
+.mobile-menu-header { display:flex; justify-content:space-between; align-items:center; padding: 16px 20px; border-bottom:1px solid var(--border); }
+.mobile-nav { flex:1; overflow-y:auto; padding: 12px 0; }
+.mobile-nav .nav-item { padding: 14px 20px; font-size: 15px; }
+
+/* Bulk actions bar */
+#bulkBar {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 16px; display: none; align-items: center; gap: 12px; z-index: 3500;
+  box-shadow: 0 10px 30px rgba(0,0,0,.5);
+}
+#bulkBar.active { display: flex; }
+
+/* Session timeout modal */
+#sessionModal .modal-box { max-width: 380px; text-align:center; }
+#sessionModal .countdown { font-size: 32px; font-weight: 700; color: var(--accent-red); margin: 12px 0; }
+
+/* Map */
+#threatMap { height: 360px; border-radius: 10px; border: 1px solid var(--border); }
+
+/* MITRE ATT&CK Matrix */
+.mitre-grid { display:flex; gap:5px; overflow-x:auto; padding:8px 0; }
+.mitre-tactic { flex:0 0 130px; background:var(--surface-2); border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+.mitre-tactic-hdr { background:var(--accent-blue); color:#fff; font-size:9px; font-weight:700; padding:5px 7px; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mitre-tactic-hdr.ics { background:var(--accent-amber); }
+.mitre-tech { padding:3px 7px; font-size:11px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05); transition:.1s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mitre-tech:hover { background:var(--surface-3); }
+.mitre-tech.detected { background:rgba(239,68,68,.2); color:var(--accent-red); font-weight:600; }
+.mitre-tech.monitored { background:rgba(16,185,129,.08); color:var(--accent-green); }
+.mitre-tech.partial { background:rgba(245,158,11,.1); color:var(--accent-amber); }
+.mitre-legend { display:flex; gap:14px; padding:8px 0; flex-wrap:wrap; font-size:12px; }
+.mitre-legend-item { display:flex; align-items:center; gap:5px; }
+.mitre-dot { width:10px; height:10px; border-radius:2px; }
+
+/* Threat Hunt */
+.hunt-chip { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:var(--surface-2); border:1px solid var(--border); border-radius:20px; font-size:12px; cursor:pointer; transition:.15s; margin:3px; }
+.hunt-chip:hover, .hunt-chip.active { background:var(--accent-blue); border-color:var(--accent-blue); color:#fff; }
+.hunt-tag { display:inline-block; padding:2px 7px; background:rgba(59,130,246,.15); color:var(--accent-blue); border-radius:10px; font-size:10px; margin:1px; }
+.sev-check { display:inline-flex; align-items:center; gap:4px; margin-right:10px; font-size:12px; cursor:pointer; }
+.sev-check input { cursor:pointer; }
+
+/* ── DFIR Timeline ─────────────────────────────────────────────── */
+.incident-timeline { position:relative; padding-left:26px; }
+.incident-timeline::before { content:''; position:absolute; left:7px; top:6px; bottom:6px; width:2px; background:var(--border); }
+.tl-item { position:relative; margin-bottom:12px; }
+.tl-dot { position:absolute; left:-22px; top:5px; width:12px; height:12px; border-radius:50%; background:var(--accent-blue); border:2px solid var(--bg); z-index:1; }
+.tl-dot.critical { background:var(--accent-red); }
+.tl-dot.high { background:var(--accent-amber); }
+.tl-dot.medium { background:var(--accent-blue); }
+.tl-card { background:var(--surface-3); border:1px solid var(--border); border-radius:8px; padding:9px 12px; cursor:pointer; }
+.tl-card:hover { border-color:var(--accent-blue); }
+.tl-meta { font-size:11px; color:var(--text-muted); margin-bottom:3px; }
+.tl-title { font-size:12.5px; font-weight:600; }
+.evidence-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-bottom:1px solid var(--border); font-size:12px; }
+.evidence-type { display:inline-block; padding:1px 6px; border-radius:3px; font-size:10px; font-weight:700; background:var(--surface-3); border:1px solid var(--border); }
+/* ── Asset Inventory ───────────────────────────────────────────── */
+.risk-score { display:inline-flex; align-items:center; justify-content:center; width:36px; height:20px; border-radius:4px; font-size:11px; font-weight:700; }
+.risk-score.critical { background:rgba(239,68,68,.15); color:var(--accent-red); }
+.risk-score.high { background:rgba(245,158,11,.15); color:var(--accent-amber); }
+.risk-score.medium { background:rgba(59,130,246,.15); color:var(--accent-blue); }
+.risk-score.low { background:rgba(16,185,129,.15); color:var(--accent-green); }
+/* ── Honeypot / Deception ─────────────────────────────────────── */
+.canary-pulse { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--accent-green); animation:canaryPulse 1.8s infinite; }
+@keyframes canaryPulse { 0%{box-shadow:0 0 0 0 rgba(16,185,129,.4)} 70%{box-shadow:0 0 0 7px rgba(16,185,129,0)} 100%{box-shadow:0 0 0 0 rgba(16,185,129,0)} }
+.trap-service { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; background:var(--surface-3); border:1px solid var(--border); border-radius:8px; font-size:12px; margin:3px; transition:.15s; }
+.trap-service.active { border-color:var(--accent-green); }
+.trap-service.triggered { border-color:var(--accent-red); background:rgba(239,68,68,.05); }
+/* ── Reports ──────────────────────────────────────────────────── */
+.report-card { background:var(--surface-3); border:1px solid var(--border); border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:8px; transition:.15s; }
+.report-card:hover { border-color:var(--accent-blue); }
+.report-card-icon { font-size:22px; margin-bottom:4px; }
+.report-card-title { font-weight:700; font-size:13.5px; }
+.report-card-desc { font-size:12px; color:var(--text-muted); flex:1; line-height:1.5; }
+.report-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; margin-bottom:16px; }
+/* ── Purdue OT Model ──────────────────────────────────────────── */
+.purdue-wrap { display:flex; flex-direction:column; gap:3px; }
+.purdue-level { padding:7px 14px; border-radius:6px; font-size:12px; display:flex; align-items:center; gap:10px; }
+.pl-5 { background:rgba(59,130,246,.08); border:1px solid rgba(59,130,246,.25); }
+.pl-4 { background:rgba(16,185,129,.08); border:1px solid rgba(16,185,129,.25); }
+.pl-3 { background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.3); }
+.pl-2 { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.3); }
+.pl-1 { background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.4); }
+.pl-0 { background:rgba(239,68,68,.18); border:1px solid rgba(239,68,68,.5); }
+.pl-num { font-weight:700; font-size:11px; background:var(--surface-3); padding:2px 6px; border-radius:3px; flex-shrink:0; }
+/* ── SIEM Rules view ──────────────────────────────────────────── */
+.rule-row { display:flex; align-items:center; gap:8px; padding:7px 10px; border-bottom:1px solid var(--border); font-size:12px; }
+.rule-tag { display:inline-block; padding:1px 6px; background:rgba(59,130,246,.12); color:var(--accent-blue); border-radius:3px; font-size:10px; }
+/* ── Login overlay ────────────────────────────────────────────── */
+#loginOverlay { position:fixed; inset:0; background:rgba(10,14,23,.97); z-index:9999; display:flex; align-items:center; justify-content:center; }
+#loginOverlay.hidden { display:none; }
+.login-box { background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:40px; width:360px; text-align:center; }
+.login-box h2 { margin:0 0 6px; font-size:22px; color:var(--accent-blue); }
+.login-box p { margin:0 0 24px; color:var(--text-muted); font-size:13px; }
+.login-box input { width:100%; margin-bottom:12px; }
+.login-skip { margin-top:12px; font-size:11px; color:var(--text-muted); cursor:pointer; text-decoration:underline; }
+/* ── Model perf bars ──────────────────────────────────────────── */
+.perf-bar { height:8px; border-radius:4px; background:var(--surface-3); overflow:hidden; margin-top:4px; }
+.perf-fill { height:100%; border-radius:4px; background:var(--accent-green); transition:width .6s; }
+.perf-row { display:flex; justify-content:space-between; align-items:center; font-size:12px; margin-bottom:8px; }
+/* ── Settings sections ────────────────────────────────────────── */
+.settings-section { margin-bottom:20px; }
+.settings-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; font-weight:600; }
+.module-health-row { display:flex; align-items:center; justify-content:space-between; padding:7px 10px; border-bottom:1px solid var(--border); font-size:13px; }
+.status-dot { width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:6px; }
+.status-dot.online { background:var(--accent-green); box-shadow:0 0 6px var(--accent-green); }
+.status-dot.offline { background:var(--text-muted); }
+/* ── Vuln scan form ───────────────────────────────────────────── */
+.scan-form { display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; padding:12px; background:var(--surface-3); border-radius:8px; margin-bottom:14px; }
+.scan-form .form-group { display:flex; flex-direction:column; gap:4px; }
+.scan-form label { font-size:11px; color:var(--text-muted); }
+/* ── Remediation card ─────────────────────────────────────────── */
+.rem-card { border-left:4px solid var(--accent-blue); background:var(--surface-3); border-radius:10px; padding:14px 16px; margin:10px 0; }
+.rem-card.critical { border-left-color:var(--accent-red); }
+.rem-card.high { border-left-color:var(--accent-amber); }
+.rem-card.medium { border-left-color:var(--accent-blue); }
+.rem-card.low { border-left-color:var(--accent-green); }
+.rem-card h4 { font-size:13px; margin:0 0 6px; display:flex; align-items:center; gap:6px; }
+.rem-card .rem-meta { font-size:11px; color:var(--text-muted); margin-bottom:8px; display:flex; gap:14px; flex-wrap:wrap; }
+.rem-card .rem-impact { font-size:12px; color:var(--text-muted); margin-bottom:8px; font-style:italic; }
+.rem-card ol { margin:0; padding-left:20px; font-size:12.5px; }
+.rem-card ol li { margin:4px 0; line-height:1.5; }
+.rem-card .rem-refs { margin-top:10px; font-size:11px; color:var(--text-muted); }
+.rem-card .rem-refs span { display:inline-block; padding:2px 8px; background:var(--surface-2); border:1px solid var(--border); border-radius:12px; margin:2px 4px 0 0; }
+.rem-card .rem-effort { display:inline-block; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:600; text-transform:uppercase; }
+.rem-card .rem-effort.quick { background:rgba(16,185,129,.15); color:var(--accent-green); }
+.rem-card .rem-effort.moderate { background:rgba(59,130,246,.15); color:var(--accent-blue); }
+.rem-card .rem-effort.hard { background:rgba(239,68,68,.15); color:var(--accent-red); }
+.btn-fix { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; background:transparent; border:1px solid var(--accent-blue); color:var(--accent-blue); border-radius:6px; cursor:pointer; font-size:11px; font-weight:600; transition:.15s; }
+.btn-fix:hover { background:var(--accent-blue); color:#fff; }
+
+@media (max-width: 1100px) {
+  #app { grid-template-columns: 70px 1fr; }
+  .brand span, .nav-item span { display: none; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .chart-grid { grid-template-columns: 1fr; }
+  .two-col { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  #app { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; }
+  #sidebar { display: none; }
+  .kpi-grid { grid-template-columns: 1fr; }
+  #hamburgerBtn { display: block; }
+  .top-center { max-width: none; width: 100%; }
+}
+</style>
+</head>
+<body>
+<div id="toastContainer"></div>
+
+<!-- ── Login Overlay ──────────────────────────────────────────── -->
+<div id="loginOverlay" class="hidden">
+  <div class="login-box">
+    <div style="text-align:center; margin-bottom:14px;"><i class="fa-solid fa-shield-halved" style="font-size:42px; color:var(--accent-green)"></i></div>
+    <h2 style="text-align:center; letter-spacing:.5px">AEGIS-OMNI Control Room</h2>
+    <p style="text-align:center">Personal Cybersecurity Suite — accedi con le credenziali admin.</p>
+    <input type="text" id="loginUser" autocomplete="username" placeholder="Username" value="admin" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()" style="margin-bottom:10px">
+    <input type="password" id="loginPass" autocomplete="current-password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()" style="margin-bottom:10px">
+    <details style="margin:0 0 12px; font-size:11px; color:var(--text-muted)">
+      <summary style="cursor:pointer; user-select:none">Hai una API key invece di credenziali?</summary>
+      <input type="password" id="loginKey" placeholder="API Key (Bearer token, opzionale)" style="margin-top:6px">
+    </details>
+    <button class="btn primary" style="width:100%" onclick="doLogin()"><i class="fa-solid fa-right-to-bracket"></i> Accedi</button>
+    <div class="login-skip" onclick="doLogin(true)">Entra in modalità locale (senza auth)</div>
+    <div id="loginError" style="color:var(--accent-red); font-size:12px; margin-top:10px; text-align:center; display:none">Credenziali non valide o backend non raggiungibile.</div>
+    <div id="loginHint" style="color:var(--text-muted); font-size:11px; margin-top:10px; text-align:center; display:none">Utente: <code>admin</code> — password impostata tramite <code>AEGIS_ADMIN_PASSWORD</code> (se non impostata, viene generata e stampata all'avvio).</div>
+  </div>
+</div>
+
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand"><i class="fa-solid fa-shield-halved"></i><span>AEGIS-OMNI</span></div>
+    <nav class="nav">
+      <div class="nav-item active" data-page="overview" onclick="navTo('overview')"><i class="fa-solid fa-gauge-high"></i><span>SOC Overview</span></div>
+      <div class="nav-item" data-page="shield" onclick="navTo('shield')"><i class="fa-solid fa-shield-heart"></i><span>Shield Engine</span></div>
+      <div class="nav-item" data-page="endpoint" onclick="navTo('endpoint')"><i class="fa-solid fa-shield-virus"></i><span>Endpoint Protection</span></div>
+      <div class="nav-item" data-page="posture" onclick="navTo('posture')"><i class="fa-solid fa-gauge-simple-high"></i><span>Security Posture</span></div>
+      <div class="nav-item" data-page="hunt2" onclick="navTo('hunt2')"><i class="fa-solid fa-binoculars"></i><span>Threat Hunt</span></div>
+      <div class="nav-item" data-page="network" onclick="navTo('network')"><i class="fa-solid fa-network-wired"></i><span>Network</span></div>
+      <div class="nav-item" data-page="ot" onclick="navTo('ot')"><i class="fa-solid fa-industry"></i><span>OT Control</span></div>
+      <div class="nav-item" data-page="siem" onclick="navTo('siem')"><i class="fa-solid fa-list-check"></i><span>SIEM</span></div>
+      <div class="nav-item" data-page="soar" onclick="navTo('soar')"><i class="fa-solid fa-robot"></i><span>SOAR</span></div>
+      <div class="nav-item" data-page="ti" onclick="navTo('ti')"><i class="fa-solid fa-globe"></i><span>Threat Intel</span></div>
+      <div class="nav-item" data-page="vuln" onclick="navTo('vuln')"><i class="fa-solid fa-bug"></i><span>Vulnerabilities</span></div>
+      <div class="nav-item" data-page="ml" onclick="navTo('ml')"><i class="fa-solid fa-brain"></i><span>CyberShield AI</span></div>
+      <div class="nav-item" data-page="roadmap" onclick="navTo('roadmap')"><i class="fa-solid fa-route"></i><span>Roadmap</span></div>
+      <div class="nav-item" data-page="settings" onclick="navTo('settings')"><i class="fa-solid fa-gear"></i><span>Settings</span></div>
+      <div class="nav-item" data-page="mitre" onclick="navTo('mitre')"><i class="fa-solid fa-sitemap"></i><span>MITRE ATT&amp;CK</span></div>
+      <div class="nav-item" data-page="hunt" onclick="navTo('hunt')"><i class="fa-solid fa-crosshairs"></i><span>Threat Hunt</span></div>
+      <div class="nav-item" data-page="compliance" onclick="navTo('compliance')"><i class="fa-solid fa-shield-halved"></i><span>Compliance</span></div>
+      <div class="nav-item" data-page="audit" onclick="navTo('audit')"><i class="fa-solid fa-clipboard-list"></i><span>Audit Log</span></div>
+      <div class="nav-item" data-page="kpi" onclick="navTo('kpi')"><i class="fa-solid fa-chart-line"></i><span>KPI / Metrics</span></div>
+      <div style="height:1px;background:var(--border);margin:8px 0"></div>
+      <div class="nav-item" data-page="dfir" onclick="navTo('dfir')"><i class="fa-solid fa-magnifying-glass-chart"></i><span>DFIR</span></div>
+      <div class="nav-item" data-page="assets" onclick="navTo('assets')"><i class="fa-solid fa-server"></i><span>Asset Inventory</span></div>
+      <div class="nav-item" data-page="honeypot" onclick="navTo('honeypot')"><i class="fa-solid fa-spider"></i><span>Deception</span></div>
+      <div class="nav-item" data-page="reports" onclick="navTo('reports')"><i class="fa-solid fa-file-shield"></i><span>Reports</span></div>
+      <div style="height:1px;background:var(--border);margin:8px 0"></div>
+      <div class="nav-item" data-page="topology" onclick="navTo('topology')"><i class="fa-solid fa-diagram-project"></i><span>Topology</span></div>
+      <div class="nav-item" data-page="tls" onclick="navTo('tls')"><i class="fa-solid fa-lock"></i><span>TLS Inspector</span></div>
+      <div class="nav-item" data-page="campaigns" onclick="navTo('campaigns')"><i class="fa-solid fa-satellite-dish"></i><span>Threat Campaigns</span></div>
+      <div class="nav-item" data-page="integrations" onclick="navTo('integrations')"><i class="fa-solid fa-puzzle-piece"></i><span>Integrations</span></div>
+      <div class="nav-item" data-page="sigma" onclick="navTo('sigma')"><i class="fa-solid fa-code"></i><span>Sigma Rules</span></div>
+      <div class="nav-item" data-page="ot-protocols" onclick="navTo('ot-protocols')"><i class="fa-solid fa-microchip"></i><span>OT Protocols</span></div>
+      <div class="nav-item" data-page="plant" onclick="navTo('plant')"><i class="fa-solid fa-clipboard-check"></i><span>Plant Assessment</span></div>
+      <div class="nav-item" data-page="evidence" onclick="navTo('evidence')"><i class="fa-solid fa-folder-open"></i><span>Evidence</span></div>
+      <div class="nav-item" data-page="pki" onclick="navTo('pki')"><i class="fa-solid fa-key"></i><span>PKI / mTLS</span></div>
+    </nav>
+  </aside>
+
+  <header id="topbar">
+    <div class="top-left">
+      <button id="hamburgerBtn" onclick="toggleMobileMenu()"><i class="fa-solid fa-bars"></i></button>
+      <div class="health-dot" id="healthDot"></div>
+      <span id="connBanner"></span>
+      <h1 id="pageTitle">SOC Overview</h1>
+    </div>
+    <div class="top-center">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="globalSearch" placeholder="Search events, IPs, MITRE IDs..." onkeydown="if(event.key==='Enter')performSearch()" oninput="onSearchInput()">
+      <div id="searchDropdown"></div>
+    </div>
+    <div class="top-right">
+      <span id="lastRefresh" style="cursor:pointer" title="Click to force refresh">Updated --</span>
+      <button class="btn" id="pauseBtn" onclick="toggleAutoRefresh()" title="Pause/resume auto-refresh"><i class="fa-solid fa-pause"></i></button>
+      <button class="btn" onclick="toggleTheme()" title="Toggle dark/light"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
+      <span id="moduleCount">0 modules</span>
+      <span id="eventCount">0 events</span>
+      <span class="threat-pill" id="threatScore">Score: --</span>
+      <button class="btn" onclick="doLogout()" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
+      <span id="clock">--:--</span>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Events 24h</div><div class="kpi-value" id="kpiEvents"><span class="skeleton" style="width:60px">&nbsp;</span></div><div class="kpi-hint">Total ingested</div><i class="fa-solid fa-bolt kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Critical Alerts</div><div class="kpi-value" id="kpiCritical" style="color:var(--accent-red)"><span class="skeleton" style="width:40px">&nbsp;</span></div><div class="kpi-hint">Require immediate action</div><i class="fa-solid fa-triangle-exclamation kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Active Modules</div><div class="kpi-value" id="kpiModules" style="color:var(--accent-green)"><span class="skeleton" style="width:40px">&nbsp;</span></div><div class="kpi-hint">Running services</div><i class="fa-solid fa-server kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Threat Score</div><div class="kpi-value" id="kpiScore" style="color:var(--accent-amber)"><span class="skeleton" style="width:50px">&nbsp;</span></div><div class="kpi-hint">0-100 risk index</div><i class="fa-solid fa-crosshairs kpi-icon"></i></div>
+      </div>
+      <div class="chart-grid">
+        <div class="panel chart-cell"><div class="panel-header"><div class="panel-title"><i class="fa-solid fa-chart-line"></i>Event Trend (24h)</div></div><canvas id="trendChart"></canvas></div>
+        <div class="panel chart-cell"><div class="panel-header"><div class="panel-title"><i class="fa-solid fa-chart-pie"></i>Severity Distribution</div></div><canvas id="severityChart"></canvas></div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+<!-- Seed controls removed: real telemetry only -->
+          <div class="event-stream" id="eventStream"><div class="muted">Loading events...</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-layer-group"></i>Module Status</div></div>
+          <div id="moduleStatus"><div class="muted">Loading modules...</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-table-cells"></i>MITRE ATT&CK Matrix</div></div>
+        <div id="mitreOverviewMatrix"><div class="muted">Loading MITRE data...</div></div>
+      </div>
+    </div>
+
+    <!-- SHIELD ENGINE -->
+    <div class="page" id="page-shield">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Shield Risk</div><div class="kpi-value" id="shieldScore"><span class="skeleton" style="width:54px">&nbsp;</span></div><div class="kpi-hint" id="shieldPosture">--</div><i class="fa-solid fa-shield-heart kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Findings</div><div class="kpi-value" id="shieldFindings" style="color:var(--accent-red)">--</div><div class="kpi-hint">Active patterns</div><i class="fa-solid fa-triangle-exclamation kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Risk Entities</div><div class="kpi-value" id="shieldEntities" style="color:var(--accent-amber)">--</div><div class="kpi-hint">IPs, CVEs, assets</div><i class="fa-solid fa-fingerprint kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Auto Hunts</div><div class="kpi-value" id="shieldHunts" style="color:var(--accent-blue)">--</div><div class="kpi-hint">Ready pivots</div><i class="fa-solid fa-crosshairs kpi-icon"></i></div>
+      </div>
+
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-shield-heart"></i>AEGIS Shield Engine</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select id="shieldWindow" style="width:110px" onchange="loadShield()">
+              <option value="6">6h</option>
+              <option value="24" selected>24h</option>
+              <option value="72">72h</option>
+              <option value="168">7d</option>
+            </select>
+            <button class="btn primary" onclick="loadShield()"><i class="fa-solid fa-rotate"></i> Analyze</button>
+            <button class="btn" onclick="exportShieldRules()"><i class="fa-solid fa-file-shield"></i> Rules</button>
+          </div>
+        </div>
+        <div id="shieldSummary" style="font-size:13px;color:var(--text-muted);line-height:1.55">Loading Shield Engine...</div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-radar"></i>Auto Findings</div></div>
+          <div id="shieldFindingList"><div class="muted">Loading...</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-screwdriver-wrench"></i>Defensive Actions</div></div>
+          <div id="shieldActions"><div class="muted">Loading...</div></div>
+        </div>
+      </div>
+
+      <div class="two-col" style="margin-top:14px">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-fingerprint"></i>Dominant Entities</div></div>
+          <div id="shieldEntityTable"><div class="muted">Loading...</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-crosshairs"></i>Auto Hunts</div></div>
+          <div id="shieldHuntTable"><div class="muted">Loading...</div></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:14px">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-code"></i>Generated Detection Rules</div></div>
+        <div id="shieldRules"><div class="muted">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- ENDPOINT PROTECTION -->
+    <div class="page" id="page-endpoint">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Hardening Score</div><div class="kpi-value" id="epScore" style="color:var(--text-muted)">—</div><div class="kpi-hint">Premi "Run Full Audit"</div><i class="fa-solid fa-shield-halved kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Critical Findings</div><div class="kpi-value" id="epCritical" style="color:var(--text-muted)">—</div><div class="kpi-hint">Disponibile dopo audit</div><i class="fa-solid fa-triangle-exclamation kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">High Findings</div><div class="kpi-value" id="epHigh" style="color:var(--text-muted)">—</div><div class="kpi-hint">Disponibile dopo audit</div><i class="fa-solid fa-flag kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Defender</div><div class="kpi-value" id="epDefender" style="color:var(--text-muted)">—</div><div class="kpi-hint">Real-time AV</div><i class="fa-solid fa-virus-slash kpi-icon"></i></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-stethoscope"></i> Hardening Audit (Lynis-style Windows)</div>
+          <div style="display:flex; gap:8px">
+            <button class="btn primary" onclick="runHardeningAudit()"><i class="fa-solid fa-play"></i> Run Full Audit</button>
+            <button class="btn" onclick="runHardeningAudit(true)" title="Include Windows Update scan (slower)"><i class="fa-solid fa-cloud-arrow-down"></i> + Updates</button>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">
+          Esegue 12+ controlli reali su questo PC: Defender, Firewall, BitLocker, account, SMBv1, RDP, UAC, autorun, porte in ascolto, share, telemetria, PowerShell logging.
+          Richiede il modulo Endpoint attivo (avvio automatico con <code>.\start-aegis.ps1</code>, oppure manuale con <code>.\aegis-endpoint.ps1 -Admin</code> per audit completo).
+        </div>
+        <div id="epAuditStatus" class="muted"></div>
+        <div id="epAuditResults"></div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-virus-slash"></i> Microsoft Defender</div><button class="btn" onclick="loadEndpointCheck('defender','epDefenderResult')"><i class="fa-solid fa-rotate"></i></button></div>
+          <div id="epDefenderResult" class="muted">Click refresh per leggere lo stato Defender.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-fire"></i> Windows Firewall</div><button class="btn" onclick="loadEndpointCheck('firewall','epFirewallResult')"><i class="fa-solid fa-rotate"></i></button></div>
+          <div id="epFirewallResult" class="muted">Click refresh per leggere i profili firewall.</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-lock"></i> BitLocker / Encryption</div><button class="btn" onclick="loadEndpointCheck('bitlocker','epBitlockerResult')"><i class="fa-solid fa-rotate"></i></button></div>
+          <div id="epBitlockerResult" class="muted">Click refresh per lo stato cifratura dischi.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-users"></i> Local Accounts</div><button class="btn" onclick="loadEndpointCheck('accounts','epAccountsResult')"><i class="fa-solid fa-rotate"></i></button></div>
+          <div id="epAccountsResult" class="muted">Click refresh per l'audit account locali.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-microchip"></i> Processi & Connessioni di rete</div>
+          <div style="display:flex; gap:8px">
+            <button class="btn" onclick="loadProcesses()"><i class="fa-solid fa-list"></i> Refresh Processes</button>
+            <button class="btn" onclick="loadConnections()"><i class="fa-solid fa-network-wired"></i> Connections</button>
+          </div>
+        </div>
+        <div id="epProcessesResult" class="muted">Click "Refresh Processes" per la lista processi con flag di rischio.</div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-file-shield"></i> YARA / Hash / Defender — Scan file</div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">
+            Carica un file sospetto: viene controllato con regole YARA, hash IoC noti, e (opzionale) Defender CLI scan.
+          </div>
+          <input type="file" id="epFileUpload" style="margin-bottom:8px; padding:6px; background:var(--surface-3); border:1px solid var(--border); border-radius:6px; width:100%">
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px">
+            <label style="font-size:12px"><input type="checkbox" id="epUseDefender"> Anche Defender (lento)</label>
+            <button class="btn primary" onclick="scanUploadedFile()"><i class="fa-solid fa-magnifying-glass"></i> Scansiona</button>
+          </div>
+          <div id="epFileScanResult" class="muted"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-key"></i> Secrets Sweeper (Gitleaks-style)</div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">
+            Scansiona una directory per AWS keys, GitHub PAT, JWT, password hardcoded, URL con credenziali, chiavi RSA, ecc. Solo locale, nessun upload.
+          </div>
+          <input type="text" id="epSecretsPath" placeholder="C:\percorso\progetto" style="margin-bottom:8px">
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px">
+            <input type="number" id="epSecretsMax" value="5000" title="Max files" style="width:120px">
+            <button class="btn primary" onclick="scanSecretsDir()"><i class="fa-solid fa-search"></i> Scansiona</button>
+          </div>
+          <div id="epSecretsResult" class="muted"></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-screwdriver-wrench"></i> Toolchain Difensiva Reale</div>
+            <button class="btn" onclick="loadDefenseIntegrations()"><i class="fa-solid fa-rotate"></i></button>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">
+            Inventario locale di Wazuh, OSQuery, ClamAV, CrowdSec, Suricata, Nmap/RustScan, OpenVAS/GVM, Nikto, Gitleaks, TruffleHog, YARA, Lynis, WireGuard, Vaultwarden e OpenBao. Mostra solo binari o servizi realmente presenti/configurati.
+          </div>
+          <div id="epIntegrationsResult" class="muted">Click refresh per controllare i tool installati sul PC.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-virus-covid-slash"></i> ClamAV — Scan percorso</div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">
+            Esegue <code>clamdscan</code> o <code>clamscan</code> se installato. Funziona su file, cartelle locali o share UNC raggiungibili con permessi autorizzati.
+          </div>
+          <input type="text" id="epClamPath" placeholder="C:\percorso\cartella oppure \\host\share\cartella" style="margin-bottom:8px">
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px">
+            <label style="font-size:12px"><input type="checkbox" id="epClamRecursive" checked> Ricorsivo se cartella</label>
+            <input type="number" id="epClamTimeout" value="300" title="Timeout secondi" style="width:110px">
+            <button class="btn primary" onclick="scanClamAvPath()"><i class="fa-solid fa-magnifying-glass"></i> Scansiona</button>
+          </div>
+          <div id="epClamResult" class="muted"></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-toolbox"></i> Tool Integrations (Wazuh/OSQuery/ClamAV/CrowdSec/Suricata/Nmap/YARA/Lynis/Vaultwarden/OpenBao/...)</div>
+            <button class="btn" onclick="loadEndpointIntegrations()"><i class="fa-solid fa-rotate"></i></button>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">
+            Inventario reale dei tool difensivi installati sul host. Non installa nulla — riporta solo presenza, versione e raggiungibilità del servizio.
+          </div>
+          <div id="epIntegrationsResult" class="muted">Click refresh per scansionare i tool installati.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-virus"></i> ClamAV Scan</div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">
+            Esegue <code>clamdscan</code>/<code>clamscan</code> se installato (read-only, no quarantena). Indica path file o directory.
+          </div>
+          <input type="text" id="epClamavPath" placeholder="C:\percorso\cartella" style="margin-bottom:8px">
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px">
+            <label style="font-size:12px"><input type="checkbox" id="epClamavRec" checked> Ricorsivo</label>
+            <button class="btn primary" onclick="scanClamav()"><i class="fa-solid fa-virus-slash"></i> Scansiona</button>
+          </div>
+          <div id="epClamavResult" class="muted"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-server"></i> Stato Modulo Endpoint</div>
+          <button class="btn" onclick="loadEndpointInfo()"><i class="fa-solid fa-circle-info"></i></button>
+        </div>
+        <div id="epHostInfo" class="muted">Click refresh per leggere host info.</div>
+      </div>
+    </div>
+
+    <!-- SECURITY POSTURE -->
+    <div class="page" id="page-posture">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Posture Score</div><div class="kpi-value" id="psScore" style="color:var(--text-muted)">—</div><div class="kpi-hint">0-100 olistico (6 layer)</div><i class="fa-solid fa-gauge-simple-high kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Grade</div><div class="kpi-value" id="psGrade" style="color:var(--text-muted)">—</div><div class="kpi-hint">A=ottimo · F=critico</div><i class="fa-solid fa-medal kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Critical Actions</div><div class="kpi-value" id="psCritical" style="color:var(--accent-red)">—</div><div class="kpi-hint">Da risolvere ora</div><i class="fa-solid fa-triangle-exclamation kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">High Actions</div><div class="kpi-value" id="psHigh" style="color:var(--accent-amber)">—</div><div class="kpi-hint">Pianificare</div><i class="fa-solid fa-flag kpi-icon"></i></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-shield-halved"></i> Defense-in-Depth — 6 layer</div>
+          <button class="btn primary" onclick="loadPosture()"><i class="fa-solid fa-play"></i> Calcola Score</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">
+          Modello del brief: Perimetro · Endpoint · Rete · Identità · Dati · Intelligence. Ogni layer pesa 20 punti.
+        </div>
+        <div id="psLayers" class="muted">Click "Calcola Score" per misurare la postura difensiva reale.</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-list-check"></i> Top 15 azioni prioritarie</div></div>
+        <div id="psActions" class="muted">—</div>
+      </div>
+    </div>
+
+    <!-- THREAT HUNT v2 (osquery-style queries) -->
+    <div class="page" id="page-hunt2">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Query Catalog</div><div class="kpi-value" id="huntCatalogCount" style="color:var(--accent-cyan)">—</div><div class="kpi-hint">Threat hunt queries</div><i class="fa-solid fa-list kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Findings Critical</div><div class="kpi-value" id="huntCritical" style="color:var(--accent-red)">—</div><div class="kpi-hint">Da indagare ora</div><i class="fa-solid fa-triangle-exclamation kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Findings High</div><div class="kpi-value" id="huntHigh" style="color:var(--accent-amber)">—</div><div class="kpi-hint">Pianificare</div><i class="fa-solid fa-flag kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Realtime Monitor</div><div class="kpi-value" id="huntRealtime" style="color:var(--text-muted)">—</div><div class="kpi-hint">Live host telemetry</div><i class="fa-solid fa-tower-broadcast kpi-icon"></i></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-binoculars"></i> Threat Hunt — catalog</div>
+          <div style="display:flex; gap:8px">
+            <button class="btn primary" onclick="runAllHunts()"><i class="fa-solid fa-play"></i> Run All Queries</button>
+            <button class="btn" onclick="loadHuntCatalog()"><i class="fa-solid fa-rotate"></i></button>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">
+          14+ query osquery/velociraptor-style sul host Windows. Ogni query è mappata a una tecnica MITRE ATT&amp;CK.
+        </div>
+        <div id="huntCatalog" class="muted">Click "Run All Queries" o seleziona una singola query qui sotto.</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-list-check"></i> Findings aggregati</div>
+        </div>
+        <div id="huntFindings" class="muted">—</div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-tower-broadcast"></i> Real-time Monitor</div>
+            <div style="display:flex; gap:6px">
+              <button class="btn success" onclick="startRealtime()"><i class="fa-solid fa-play"></i> Start</button>
+              <button class="btn danger" onclick="stopRealtime()"><i class="fa-solid fa-stop"></i> Stop</button>
+              <button class="btn" onclick="loadRealtimeStatus()"><i class="fa-solid fa-rotate"></i></button>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">
+            Polling continuo (15s) di nuovi processi, listening ports, autorun, brute-force. Eventi → /api/v1/ingest/generic.
+          </div>
+          <div id="realtimeStatus" class="muted">Click "Start" per attivare il monitor live.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-globe"></i> Live IOC feeds</div>
+            <div style="display:flex; gap:6px">
+              <button class="btn primary" onclick="refreshIOCFeeds()"><i class="fa-solid fa-cloud-arrow-down"></i> Refresh</button>
+              <button class="btn" onclick="loadIOCStatus()"><i class="fa-solid fa-rotate"></i></button>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">
+            URLhaus + FeodoTracker + MalwareBazaar + Tor exit + Spamhaus DROP. Auto-refresh ogni 12h.
+          </div>
+          <div id="iocStatus" class="muted">—</div>
+          <div style="margin-top:10px">
+            <input type="text" id="iocLookupInput" placeholder="IP, dominio, URL o hash..." style="margin-bottom:6px">
+            <button class="btn primary" onclick="iocLookup()"><i class="fa-solid fa-magnifying-glass"></i> Lookup IOC</button>
+            <div id="iocLookupResult" style="margin-top:8px;font-size:12px"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-shield-virus"></i> Containment Actions (dry-run di default)</div>
+          <button class="btn" onclick="loadContainmentLog()"><i class="fa-solid fa-history"></i> History</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">
+          <strong style="color:var(--accent-amber)">⚠ Tutte le azioni sono dry-run.</strong> Per eseguirle realmente, attiva il checkbox "Confirm execute" prima di cliccare. Ogni azione esegue/registra su <code>%LOCALAPPDATA%\AEGIS-Quarantine\containment.log</code>.
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:14px;padding:8px 12px;background:rgba(239,68,68,.06);border:1px solid var(--accent-red);border-radius:6px;cursor:pointer">
+          <input type="checkbox" id="containConfirm">
+          <span><strong style="color:var(--accent-red)">CONFIRM EXECUTE</strong> — le azioni sottostanti partiranno realmente, non in dry-run</span>
+        </label>
+
+        <div class="two-col">
+          <div class="panel" style="background:var(--surface-3); margin-bottom:0">
+            <div class="panel-title" style="font-size:13px;margin-bottom:8px"><i class="fa-solid fa-ban"></i> Block IP (firewall)</div>
+            <input type="text" id="containIP" placeholder="1.2.3.4" style="margin-bottom:6px">
+            <div style="display:flex;gap:6px;margin-bottom:6px">
+              <select id="containDir" style="flex:1"><option value="in">Inbound</option><option value="out">Outbound</option><option value="both">Both</option></select>
+              <button class="btn danger" onclick="containBlockIP()"><i class="fa-solid fa-ban"></i> Block</button>
+              <button class="btn" onclick="containUnblockIP()"><i class="fa-solid fa-check"></i> Unblock</button>
+            </div>
+            <div id="containBlockResult" style="font-size:11px"></div>
+          </div>
+          <div class="panel" style="background:var(--surface-3); margin-bottom:0">
+            <div class="panel-title" style="font-size:13px;margin-bottom:8px"><i class="fa-solid fa-skull-crossbones"></i> Kill Process / Quarantine File</div>
+            <div style="display:flex;gap:6px;margin-bottom:6px">
+              <input type="number" id="containPid" placeholder="PID" style="flex:0 0 100px">
+              <button class="btn danger" onclick="containKillPid()"><i class="fa-solid fa-xmark"></i> Kill PID</button>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:6px">
+              <input type="text" id="containFile" placeholder="C:\path\suspicious.exe">
+              <button class="btn danger" onclick="containQuarantine()"><i class="fa-solid fa-box-archive"></i> Quarantine</button>
+            </div>
+            <div id="containActionResult" style="font-size:11px"></div>
+          </div>
+        </div>
+        <div class="two-col" style="margin-top:10px">
+          <div class="panel" style="background:var(--surface-3); margin-bottom:0">
+            <div class="panel-title" style="font-size:13px;margin-bottom:8px"><i class="fa-solid fa-user-slash"></i> Disable / Enable Local Account</div>
+            <div style="display:flex;gap:6px">
+              <input type="text" id="containAccount" placeholder="username">
+              <button class="btn danger" onclick="containDisableAcc()"><i class="fa-solid fa-user-slash"></i> Disable</button>
+              <button class="btn" onclick="containEnableAcc()"><i class="fa-solid fa-user-check"></i> Enable</button>
+            </div>
+            <div id="containAccResult" style="font-size:11px;margin-top:6px"></div>
+          </div>
+          <div class="panel" style="background:var(--surface-3); margin-bottom:0">
+            <div class="panel-title" style="font-size:13px;margin-bottom:8px"><i class="fa-solid fa-plug-circle-xmark"></i> Host Isolation (big red button)</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">Blocca tutta la rete del host. Opzionale: allow_ip per mantenere il canale con AEGIS.</div>
+            <div style="display:flex;gap:6px">
+              <input type="text" id="containAllowIP" placeholder="allow_ip (opzionale)">
+              <button class="btn danger" onclick="containIsolate()"><i class="fa-solid fa-plug-circle-xmark"></i> ISOLATE</button>
+              <button class="btn" onclick="containUnisolate()"><i class="fa-solid fa-link"></i> Reconnect</button>
+            </div>
+            <div id="containIsoResult" style="font-size:11px;margin-top:6px"></div>
+          </div>
+        </div>
+        <div id="containLog" style="margin-top:14px;font-size:11px"></div>
+      </div>
+    </div>
+
+    <!-- NETWORK -->
+    <div class="page" id="page-network">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Packets Analyzed</div><div class="kpi-value" id="netPackets"><span class="skeleton" style="width:50px">&nbsp;</span></div><div class="kpi-hint">Passive capture / sim</div></div>
+        <div class="kpi-card"><div class="kpi-label">Network Alerts</div><div class="kpi-value" id="netAlerts" style="color:var(--accent-amber)"><span class="skeleton" style="width:40px">&nbsp;</span></div><div class="kpi-hint">Detections last hour</div></div>
+        <div class="kpi-card"><div class="kpi-label">Port Scans</div><div class="kpi-value" id="netScans" style="color:var(--accent-red)"><span class="skeleton" style="width:30px">&nbsp;</span></div><div class="kpi-hint">Vertical / horizontal</div></div>
+        <div class="kpi-card"><div class="kpi-label">Suspicious Ports</div><div class="kpi-value" id="netSuspicious"><span class="skeleton" style="width:30px">&nbsp;</span></div><div class="kpi-hint">C2 / RAT indicators</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-network-wired"></i>LAN Discovery &amp; Real-time Scan</div>
+          <button class="btn" onclick="triggerNetworkSim()"><i class="fa-solid fa-eye"></i> Live Monitor</button>
+        </div>
+        <!-- Scan Controls -->
+        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:12px 0 8px">
+          <div style="flex:2;min-width:180px">
+            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Target Network</label>
+            <select id="scanTargetSel" style="width:100%">
+              <option value="">-- rilevamento automatico --</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:120px">
+            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Modalità</label>
+            <select id="scanMode" style="width:100%">
+              <option value="quick">Quick (top 36 porte)</option>
+              <option value="full">Full (1-1024 + comuni)</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:120px">
+            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">OT Safety</label>
+            <select id="scanOTMode" style="width:100%">
+              <option value="normal">Normal</option>
+              <option value="safe">Safe (read-only)</option>
+              <option value="aggressive">Aggressive</option>
+            </select>
+          </div>
+          <button class="btn primary" id="btnScan" onclick="launchLANScan()" style="height:34px;padding:0 20px"><i class="fa-solid fa-play"></i> Avvia Scansione</button>
+          <button class="btn" onclick="loadScanResults()" style="height:34px"><i class="fa-solid fa-rotate"></i></button>
+          <button class="btn" onclick="exportScan('csv')" title="Esporta CSV"><i class="fa-solid fa-file-csv"></i></button>
+          <button class="btn" onclick="exportScan('html')" title="Esporta HTML"><i class="fa-solid fa-file-code"></i></button>
+        </div>
+        <!-- Progress bar -->
+        <div id="scanProgressWrap" style="display:none;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:4px">
+            <span id="scanStatusTxt">Initializing...</span>
+            <span id="scanPct">0%</span>
+          </div>
+          <div style="background:var(--surface-3);border-radius:4px;height:8px;overflow:hidden">
+            <div id="scanProgressBar" style="height:100%;background:var(--accent-blue);border-radius:4px;transition:width .4s;width:0%"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px" id="scanHostsTxt"></div>
+        </div>
+        <!-- Results table -->
+        <div id="scanResults"><div class="empty-state"><i class="fa-solid fa-magnifying-glass"></i><div>Nessuna scansione eseguita. Clicca <strong>Avvia Scansione</strong> per scoprire gli host della rete.</div></div></div>
+        <!-- Vuln scan shortcut -->
+        <div id="vulnScanFromNet" style="display:none;margin-top:10px;padding:10px;background:var(--surface-3);border-radius:6px;border:1px solid var(--border)">
+          <span style="font-size:12px;color:var(--text-muted)">Host scoperti disponibili per la scansione CVE</span>
+          <button class="btn primary" onclick="launchVulnBatchFromScan()" style="margin-left:12px;height:28px;padding:0 14px;font-size:12px"><i class="fa-solid fa-shield-halved"></i> Scansiona CVE su tutti gli host</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- OT -->
+    <div class="page" id="page-ot">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">OT Assets</div><div class="kpi-value" id="otAssets" style="color:var(--accent-cyan)"><span class="skeleton" style="width:30px">&nbsp;</span></div><div class="kpi-hint">Discovered devices</div></div>
+        <div class="kpi-card"><div class="kpi-label">OT Alerts</div><div class="kpi-value" id="otAlerts" style="color:var(--accent-amber)"><span class="skeleton" style="width:30px">&nbsp;</span></div><div class="kpi-hint">Read-only advisories</div></div>
+        <div class="kpi-card"><div class="kpi-label">Safety Gate</div><div class="kpi-value" style="color:var(--accent-green)">ARMED</div><div class="kpi-hint">Human approval required</div></div>
+        <div class="kpi-card"><div class="kpi-label">Protocols</div><div class="kpi-value" id="otProtocols"><span class="skeleton" style="width:30px">&nbsp;</span></div><div class="kpi-hint">Modbus/DNP3/OPC UA</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-industry"></i>OT Asset Inventory</div><button class="btn primary" onclick="refreshOT()"><i class="fa-solid fa-rotate"></i> Refresh Assets</button></div>
+        <div id="otTable"><span class="skeleton" style="width:120px">&nbsp;</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-layer-group"></i>Purdue Reference Model — Live Asset Mapping</div></div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">IEC 62443 / ISA-99 Purdue hierarchy. Assets automatically classified by protocol and device type.</div>
+        <div id="purdueModel">
+          <div class="purdue-level pl-5" style="margin-bottom:6px"><span class="pl-num">L5</span><span style="flex:1;font-weight:600">Enterprise Network</span><span style="color:var(--text-muted);font-size:11px">ERP, Business Systems, Cloud</span><span id="pl5Assets" style="font-family:monospace;font-size:11px"></span></div>
+          <div class="purdue-level pl-4" style="margin-bottom:6px"><span class="pl-num">L4</span><span style="flex:1;font-weight:600">Site Business / Scheduling</span><span style="color:var(--text-muted);font-size:11px">Historian, Asset Mgmt, Jump Hosts</span><span id="pl4Assets" style="font-family:monospace;font-size:11px"></span></div>
+          <div style="border-left:3px solid var(--accent-amber);padding-left:10px;margin:8px 0 8px 7px;font-size:11px;color:var(--accent-amber)">⚡ IDMZ — Industrial DMZ (IT/OT Boundary)</div>
+          <div class="purdue-level pl-3" style="margin-bottom:6px"><span class="pl-num">L3</span><span style="flex:1;font-weight:600">Site Operations / Supervisory</span><span style="color:var(--text-muted);font-size:11px">HMI, SCADA, MES</span><span id="pl3Assets" style="font-family:monospace;font-size:11px"></span></div>
+          <div class="purdue-level pl-2" style="margin-bottom:6px"><span class="pl-num">L2</span><span style="flex:1;font-weight:600">Area Control</span><span style="color:var(--text-muted);font-size:11px">PLC, DCS, Controllers</span><span id="pl2Assets" style="font-family:monospace;font-size:11px"></span></div>
+          <div class="purdue-level pl-1" style="margin-bottom:6px"><span class="pl-num">L1</span><span style="flex:1;font-weight:600">Basic Control</span><span style="color:var(--text-muted);font-size:11px">RTU, Field Controllers, Drives</span><span id="pl1Assets" style="font-family:monospace;font-size:11px"></span></div>
+          <div class="purdue-level pl-0"><span class="pl-num">L0</span><span style="flex:1;font-weight:600">Process / Field Devices</span><span style="color:var(--text-muted);font-size:11px">Sensors, Actuators, Instrumentation</span><span id="pl0Assets" style="font-family:monospace;font-size:11px"></span></div>
+        </div>
+        <div id="purdueAlerts" style="margin-top:14px"></div>
+      </div>
+    </div>
+
+    <!-- PLANT ASSESSMENT (rete industriale) -->
+    <div class="page" id="page-plant">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Safety Gate</div><div class="kpi-value" id="plantGate" style="color:var(--accent-green)">ON</div><div class="kpi-hint">Autorizzazione + read-only</div></div>
+        <div class="kpi-card"><div class="kpi-label">Cattura live</div><div class="kpi-value" id="plantCapture">—</div><div class="kpi-hint">scapy / pcap offline</div></div>
+        <div class="kpi-card"><div class="kpi-label">Ultimo punteggio</div><div class="kpi-value" id="plantScore">—</div><div class="kpi-hint">0-100, piu' alto e' meglio</div></div>
+        <div class="kpi-card"><div class="kpi-label">Finding</div><div class="kpi-value" id="plantFindingCount">—</div><div class="kpi-hint">critici / alti / medi</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-industry"></i>Assessment rete impianto</div>
+          <button class="btn" onclick="loadPlantAssessment()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:12px">
+          <div class="form-group"><label>Sito / linea *</label><input id="plantSite" placeholder="Linea 2 - confezionamento"></div>
+          <div class="form-group"><label>Cliente</label><input id="plantClient" placeholder="Ragione sociale"></div>
+          <div class="form-group"><label>Rif. autorizzazione *</label><input id="plantAuthRef" placeholder="WO-2026-014 / email responsabile"></div>
+          <div class="form-group"><label>Modalita'</label>
+            <select id="plantMode">
+              <option value="passive">Passivo (zero pacchetti)</option>
+              <option value="readonly" selected>Read-only (default)</option>
+              <option value="active">Active fingerprint</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Profilo porte</label>
+            <select id="plantProfile">
+              <option value="ot" selected>OT (industriali)</option>
+              <option value="common">Common</option>
+              <option value="it">IT</option>
+              <option value="full">Full 1-1000 + OT</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Target (IP/CIDR) *</label><input id="plantTarget" placeholder="192.168.10.0/24"></div>
+          <div class="form-group"><label>Interfaccia (cattura live)</label><select id="plantIface"><option value="">— usa pcap —</option></select></div>
+          <div class="form-group"><label>Durata cattura (s)</label><input id="plantDuration" type="number" value="60" min="0"></div>
+          <div class="form-group"><label>Pcap esistente (path)</label><input id="plantPcapPath" placeholder="C:\\capture\\linea2.pcapng"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button class="btn primary" id="btnPlantStart" onclick="startPlantAssessment()"><i class="fa-solid fa-play"></i> Avvia assessment</button>
+          <span style="font-size:11px;color:var(--accent-amber)"><i class="fa-solid fa-triangle-exclamation"></i> Serve autorizzazione scritta del proprietario dell'impianto. Nessuna scrittura sui protocolli di processo.</span>
+        </div>
+        <div id="plantProgressWrap" style="display:none;margin-top:14px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span id="plantStage">in coda</span><span id="plantPct">0%</span></div>
+          <div style="width:100%;height:6px;background:var(--surface-3);border-radius:3px;overflow:hidden"><div id="plantProgressBar" style="width:0%;height:100%;background:var(--accent-cyan);transition:width .3s"></div></div>
+        </div>
+        <div id="plantError" style="display:none;margin-top:10px;color:var(--accent-red);font-size:12px"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-file-arrow-up"></i>Analisi rapida di una cattura (pcap/pcapng)</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+          <input type="file" id="plantPcapUpload" accept=".pcap,.pcapng,.cap" style="font-size:12px">
+          <button class="btn" onclick="uploadPlantPcap()"><i class="fa-solid fa-magnifying-glass"></i> Analizza offline</button>
+          <span style="font-size:11px;color:var(--text-muted)">Nessun pacchetto inviato: utile per una prima diagnosi senza toccare l'impianto.</span>
+        </div>
+        <pre id="plantPcapResult" style="display:none;font-size:11px;background:var(--surface-3);padding:10px;border-radius:6px;max-height:240px;overflow:auto"></pre>
+      </div>
+
+      <div class="panel" id="plantResultPanel" style="display:none">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-shield-halved"></i>Risultati assessment</div>
+          <div style="display:flex;gap:8px" id="plantReportLinks"></div>
+        </div>
+        <div id="plantFindingsList"></div>
+        <div style="margin-top:14px;overflow-x:auto" id="plantAssetsTable"></div>
+      </div>
+    </div>
+
+    <!-- SIEM -->
+    <div class="page" id="page-siem">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Rules Loaded</div><div class="kpi-value" id="siemRules"><span class="skeleton" style="width:40px">&nbsp;</span></div><div class="kpi-hint">Active correlation rules</div></div>
+        <div class="kpi-card"><div class="kpi-label">Incidents</div><div class="kpi-value" id="siemIncidents" style="color:var(--accent-red)"><span class="skeleton" style="width:40px">&nbsp;</span></div><div class="kpi-hint">Correlated events</div></div>
+        <div class="kpi-card"><div class="kpi-label">Events Ingested</div><div class="kpi-value" id="siemEvents"><span class="skeleton" style="width:60px">&nbsp;</span></div><div class="kpi-hint">Last 24h</div></div>
+        <div class="kpi-card"><div class="kpi-label">Dedup Cooldown</div><div class="kpi-value">300s</div><div class="kpi-hint">Incident suppression</div></div>
+      </div>
+      <div class="panel">
+<button class="btn primary" onclick="triggerSIEMDemo()"><i class="fa-solid fa-play"></i> Trigger Correlazione</button>
+        <div id="siemTable"><span class="skeleton" style="width:120px">&nbsp;</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-shield-halved"></i>Correlation Rules — Loaded from siem_rules.yaml</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span id="siemRulesEnabledCount" style="font-size:11px;color:var(--text-muted)"></span>
+            <button class="btn" onclick="loadSIEMRules()"><i class="fa-solid fa-rotate"></i></button>
+          </div>
+        </div>
+        <div id="siemRulesTable"><div class="muted" style="padding:12px">Loading rules...</div></div>
+      </div>
+    </div>
+
+    <!-- SOAR -->
+    <div class="page" id="page-soar">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Playbooks</div><div class="kpi-value" id="soarPlaybooks"><span class="skeleton" style="width:30px">&nbsp;</span></div><div class="kpi-hint">Loaded workflows</div></div>
+        <div class="kpi-card"><div class="kpi-label">Executed</div><div class="kpi-value" id="soarExecuted"><span class="skeleton" style="width:40px">&nbsp;</span></div><div class="kpi-hint">Total runs</div></div>
+        <div class="kpi-card"><div class="kpi-label">Dry Run</div><div class="kpi-value" id="soarDryRun" style="color:var(--accent-green)">ON</div><div class="kpi-hint">Safe mode active</div></div>
+        <div class="kpi-card"><div class="kpi-label">OT Safe</div><div class="kpi-value" style="color:var(--accent-green)">YES</div><div class="kpi-hint">Advisory-only default</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-robot"></i>SOAR Playbook Control</div></div>
+        <div id="soarTable"><span class="skeleton" style="width:120px">&nbsp;</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-bolt"></i>Trigger Playbook</div></div>
+        <div class="form-row">
+          <select id="soarPlaybookSelect"><option>Loading playbooks...</option></select>
+          <input type="text" id="soarEventId" placeholder="Event ID (optional)">
+          <button class="btn primary" onclick="triggerPlaybookManual()"><i class="fa-solid fa-play"></i> Trigger</button>
+        </div>
+        <div id="soarTriggerResult" class="muted"></div>
+      </div>
+    </div>
+
+    <!-- THREAT INTEL -->
+    <div class="page" id="page-ti">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Total IOCs</div><div class="kpi-value" id="tiTotal"><span class="skeleton" style="width:50px">&nbsp;</span></div><div class="kpi-hint">In registry</div></div>
+        <div class="kpi-card"><div class="kpi-label">IP Blocks</div><div class="kpi-value" id="tiIPs"><span class="skeleton" style="width:40px">&nbsp;</span></div><div class="kpi-hint">Known malicious</div></div>
+        <div class="kpi-card"><div class="kpi-label">Domains</div><div class="kpi-value" id="tiDomains"><span class="skeleton" style="width:40px">&nbsp;</span></div><div class="kpi-hint">Phishing / C2</div></div>
+        <div class="kpi-card"><div class="kpi-label">Recent Matches</div><div class="kpi-value" id="tiMatches" style="color:var(--accent-red)"><span class="skeleton" style="width:30px">&nbsp;</span></div><div class="kpi-hint">Last 24h</div></div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-magnifying-glass"></i>IOC Lookup</div></div>
+          <div class="form-row"><input type="text" id="tiLookupInput" placeholder="IP, domain, or hash..."></div>
+          <button class="btn primary" onclick="tiLookup()">Lookup</button>
+          <pre id="tiLookupResult" style="margin-top:10px;font-size:12px;color:var(--text-muted)"></pre>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-globe"></i>Feed Status</div></div>
+          <div id="tiFeeds"><span class="skeleton" style="width:120px">&nbsp;</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-map-location-dot"></i>Threat Map</div></div>
+        <div id="threatMap"></div>
+      </div>
+    </div>
+
+    <!-- VULNERABILITIES -->
+    <div class="page" id="page-vuln">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Findings</div><div class="kpi-value" id="vulnFindings"><span class="skeleton" style="width:50px">&nbsp;</span></div><div class="kpi-hint">Total detected</div></div>
+        <div class="kpi-card"><div class="kpi-label">Critical CVEs</div><div class="kpi-value" id="vulnCritical" style="color:var(--accent-red)"><span class="skeleton" style="width:30px">&nbsp;</span></div><div class="kpi-hint">CVSS >= 9.0</div></div>
+        <div class="kpi-card"><div class="kpi-label">Profiles</div><div class="kpi-value" id="vulnProfiles"><span class="skeleton" style="width:30px">&nbsp;</span></div><div class="kpi-hint">Scanned hosts</div></div>
+        <div class="kpi-card"><div class="kpi-label">Active Scan</div><div class="kpi-value" id="vulnActive" style="color:var(--accent-green)">NO</div><div class="kpi-hint">Passive mode</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-crosshairs"></i>Active Scan — Target IP</div></div>
+        <div class="scan-form">
+          <div class="form-group">
+            <label>Target IP / Host</label>
+            <input type="text" id="vulnScanTarget" placeholder="e.g. 192.168.1.10" style="width:180px">
+          </div>
+          <div class="form-group">
+            <label>Ports (comma-separated)</label>
+            <input type="text" id="vulnScanPorts" placeholder="22,80,443,502" style="width:200px">
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <button class="btn primary" onclick="triggerVulnScanTarget()"><i class="fa-solid fa-play"></i> Scan</button>
+          </div>
+          <div class="form-group">
+<label>Vulnerability evaluation (real)</label>
+            <button class="btn" onclick="triggerVulnScan()"><i class="fa-solid fa-flask"></i> Run Evaluation</button>
+          </div>
+        </div>
+        <div id="vulnScanStatus" style="font-size:12px;color:var(--text-muted);margin-bottom:8px"></div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-bug"></i>Vulnerability Findings</div></div>
+          <div id="vulnTable"><span class="skeleton" style="width:120px">&nbsp;</span></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-magnifying-glass"></i>CVE Keyword Search (NVD API)</div></div>
+          <div class="form-row" style="margin-bottom:8px">
+            <input type="text" id="cveSearchInput" placeholder="nginx, log4j, openssh, modbus..." style="flex:1">
+            <button class="btn primary" onclick="searchCVE()"><i class="fa-solid fa-search"></i> Search</button>
+          </div>
+          <div id="cveSearchResult" style="font-size:12px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ML -->
+    <div class="page" id="page-ml">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Binary Model</div><div class="kpi-value" style="color:var(--accent-green)">READY</div><div class="kpi-hint">BENIGN/ATTACK</div></div>
+        <div class="kpi-card"><div class="kpi-label">Family Model</div><div class="kpi-value" style="color:var(--accent-green)">READY</div><div class="kpi-hint">DoS/Probe/R2L/U2R</div></div>
+        <div class="kpi-card"><div class="kpi-label">Anomaly Model</div><div class="kpi-value" style="color:var(--accent-green)">READY</div><div class="kpi-hint">Baseline deviation</div></div>
+        <div class="kpi-card"><div class="kpi-label">Predictions</div><div class="kpi-value" id="mlCount"><span class="skeleton" style="width:40px">&nbsp;</span></div><div class="kpi-hint">Total served</div></div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-brain"></i>Quick Prediction</div></div>
+          <div class="muted" style="margin-bottom:8px">Paste NSL-KDD JSON features:</div>
+          <textarea id="mlInput" rows="6" placeholder='{"duration":0,"protocol_type":"tcp","service":"http","flag":"SF","src_bytes":181,"dst_bytes":5450,"land":0,"wrong_fragment":0}'></textarea>
+          <button class="btn primary" style="margin-top:8px" onclick="mlPredict()"><i class="fa-solid fa-bolt"></i> Predict</button>
+          <pre id="mlResult" style="margin-top:10px;font-size:12px;color:var(--text-muted)"></pre>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-gauge"></i>Risk Gauge</div></div>
+          <canvas id="mlGauge"></canvas>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-chart-bar"></i>Model Performance — CyberShield v0.3 (NSL-KDD)</div></div>
+          <div id="mlPerfStats">
+            <div class="perf-row"><span>Binary Classifier (BENIGN/ATTACK)</span><span id="mlBinaryAcc" style="font-weight:700;color:var(--accent-green)">--</span></div>
+            <div class="perf-bar"><div class="perf-fill" id="mlBinaryBar" style="width:0%;background:var(--accent-green)"></div></div>
+            <div class="perf-row" style="margin-top:12px"><span>Attack Family Classifier</span><span id="mlFamilyAcc" style="font-weight:700;color:var(--accent-blue)">--</span></div>
+            <div class="perf-bar"><div class="perf-fill" id="mlFamilyBar" style="width:0%;background:var(--accent-blue)"></div></div>
+            <div class="perf-row" style="margin-top:12px"><span>Anomaly Detector (Isolation Forest)</span><span id="mlAnomalyAcc" style="font-weight:700;color:var(--accent-amber)">--</span></div>
+            <div class="perf-bar"><div class="perf-fill" id="mlAnomalyBar" style="width:0%;background:var(--accent-amber)"></div></div>
+            <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted)" id="mlTrainInfo"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-list"></i>Attack Families Detected</div></div>
+          <div id="mlFamilyList" style="font-size:12px">
+            <div class="rule-row"><span class="rule-tag">DoS</span><span>Denial of Service — SYN flood, ping flood, teardrop</span></div>
+            <div class="rule-row"><span class="rule-tag">Probe</span><span>Reconnaissance — port scan, nmap, portsweep</span></div>
+            <div class="rule-row"><span class="rule-tag">R2L</span><span>Remote to Local — brute force, guess_passwd</span></div>
+            <div class="rule-row"><span class="rule-tag">U2R</span><span>User to Root — buffer overflow, rootkit, loadmodule</span></div>
+            <div class="rule-row"><span class="rule-tag">Normal</span><span>Legitimate traffic — baseline verified</span></div>
+          </div>
+          <div style="margin-top:12px;font-size:11px;color:var(--text-muted)">
+            Trained on NSL-KDD dataset (real network traffic). Models: Random Forest + XGBoost ensemble + Isolation Forest.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MITRE ATT&CK MATRIX -->
+    <div class="page" id="page-mitre">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Tactics Covered</div><div class="kpi-value" id="mitreTactics" style="color:var(--accent-blue)">--</div><div class="kpi-hint">/ 14 Enterprise + ICS</div></div>
+        <div class="kpi-card"><div class="kpi-label">Techniques Detected</div><div class="kpi-value" id="mitreTechs" style="color:var(--accent-red)">--</div><div class="kpi-hint">From live events</div></div>
+        <div class="kpi-card"><div class="kpi-label">ICS Techniques</div><div class="kpi-value" id="mitreICS" style="color:var(--accent-amber)">--</div><div class="kpi-hint">T0xxx mapped</div></div>
+        <div class="kpi-card"><div class="kpi-label">Top Tactic</div><div class="kpi-value" id="mitreTopTactic" style="font-size:13px;color:var(--accent-purple)">--</div><div class="kpi-hint">Most active</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-sitemap"></i>MITRE ATT&amp;CK Enterprise — Technique Coverage</div>
+          <button class="btn" onclick="loadMitre()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <div class="mitre-legend">
+          <div class="mitre-legend-item"><div class="mitre-dot" style="background:var(--accent-red)"></div><span>Detected in events</span></div>
+          <div class="mitre-legend-item"><div class="mitre-dot" style="background:var(--accent-amber)"></div><span>Rule monitors</span></div>
+          <div class="mitre-legend-item"><div class="mitre-dot" style="background:var(--accent-green)"></div><span>Covered / passive</span></div>
+          <div class="mitre-legend-item"><div class="mitre-dot" style="background:var(--surface-3)"></div><span>Not covered</span></div>
+        </div>
+        <div id="mitreMatrix" class="mitre-grid"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-industry"></i>MITRE ATT&amp;CK ICS — Industrial Control Systems</div></div>
+        <div id="mitreICSMatrix" class="mitre-grid"></div>
+      </div>
+      <div class="panel" id="mitreTechDetail" style="display:none">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-magnifying-glass"></i>Technique Detail</div><button class="btn" onclick="document.getElementById('mitreTechDetail').style.display='none'">Close</button></div>
+        <div id="mitreTechContent"></div>
+      </div>
+    </div>
+
+    <!-- THREAT HUNT -->
+    <div class="page" id="page-hunt">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-crosshairs"></i>Threat Hunt — Search &amp; Filter</div></div>
+        <div class="form-row" style="flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <input type="text" id="huntQuery" placeholder="Keyword, IP, CVE… or /regex/ for pattern match" style="flex:1;min-width:260px">
+          <select id="huntTime" style="width:130px">
+            <option value="1h">Last 1 hour</option>
+            <option value="6h">Last 6 hours</option>
+            <option value="24h" selected>Last 24 hours</option>
+            <option value="7d">Last 7 days</option>
+            <option value="all">All events</option>
+          </select>
+          <select id="huntCategory" style="width:140px">
+            <option value="all">All categories</option>
+            <option value="network">Network</option>
+            <option value="endpoint">Endpoint</option>
+            <option value="identity">Identity</option>
+            <option value="industrial">Industrial / OT</option>
+            <option value="ml">ML / AI</option>
+            <option value="vulnerability">Vulnerability</option>
+            <option value="intelligence">Threat Intel</option>
+          </select>
+          <button class="btn primary" onclick="runHunt()"><i class="fa-solid fa-crosshairs"></i> Hunt</button>
+          <button class="btn" onclick="clearHunt()"><i class="fa-solid fa-xmark"></i> Clear</button>
+        </div>
+        <div style="margin-bottom:12px">
+          <span class="muted" style="font-size:12px;margin-right:8px">Severity:</span>
+          <label class="sev-check"><input type="checkbox" class="hunt-sev" value="critical" checked><span style="color:var(--accent-red)">Critical</span></label>
+          <label class="sev-check"><input type="checkbox" class="hunt-sev" value="high" checked><span style="color:var(--accent-amber)">High</span></label>
+          <label class="sev-check"><input type="checkbox" class="hunt-sev" value="medium" checked><span>Medium</span></label>
+          <label class="sev-check"><input type="checkbox" class="hunt-sev" value="low" checked><span style="color:var(--accent-green)">Low</span></label>
+          <label class="sev-check"><input type="checkbox" class="hunt-sev" value="info"><span style="color:var(--text-muted)">Info</span></label>
+        </div>
+        <div style="margin-bottom:8px">
+          <span class="muted" style="font-size:12px;margin-right:8px">Quick Hunts:</span>
+          <span class="hunt-chip" onclick="quickHunt('lsass OR mimikatz OR credential dump')"><i class="fa-solid fa-key"></i> Credential Theft</span>
+          <span class="hunt-chip" onclick="quickHunt('c2 OR beaconing OR dns tunnel')"><i class="fa-solid fa-tower-broadcast"></i> C2 Beaconing</span>
+          <span class="hunt-chip" onclick="quickHunt('lateral movement OR pass the hash OR psexec')"><i class="fa-solid fa-arrows-left-right"></i> Lateral Movement</span>
+          <span class="hunt-chip" onclick="quickHunt('modbus OR dnp3 OR opc ua OR ot')"><i class="fa-solid fa-industry"></i> OT Threats</span>
+          <span class="hunt-chip" onclick="quickHunt('ransom OR encrypt OR shadow copy')"><i class="fa-solid fa-lock"></i> Ransomware</span>
+          <span class="hunt-chip" onclick="quickHunt('scan OR nmap OR discovery OR probe')"><i class="fa-solid fa-radar"></i> Recon/Scan</span>
+          <span class="hunt-chip" onclick="quickHunt('CVE-')"><i class="fa-solid fa-bug"></i> CVE Findings</span>
+          <span class="hunt-chip" onclick="quickHunt('exfil OR exfiltration OR data loss')"><i class="fa-solid fa-file-export"></i> Exfiltration</span>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-table-list"></i>Hunt Results <span id="huntCount" style="color:var(--text-muted);font-size:12px;font-weight:400"></span></div>
+          <div style="display:flex;gap:6px">
+            <button class="btn" onclick="exportHuntJSON()"><i class="fa-solid fa-download"></i> Export JSON</button>
+            <button class="btn" onclick="exportHuntCSV()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+          </div>
+        </div>
+        <div id="huntStats" style="display:none;margin-bottom:10px"></div>
+        <div id="huntResults"><div class="empty-state"><i class="fa-solid fa-crosshairs"></i><div>Run a hunt query to search events</div></div></div>
+      </div>
+    </div>
+
+    <!-- COMPLIANCE / NIS2 -->
+    <div class="page" id="page-compliance">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">NIS2 Controls</div><div class="kpi-value" id="compNIS2Score" style="color:var(--accent-green)">--</div><div class="kpi-hint">Implemented / Total</div></div>
+        <div class="kpi-card"><div class="kpi-label">GDPR Art.32</div><div class="kpi-value" id="compGDPR" style="color:var(--accent-green)">--</div><div class="kpi-hint">Technical measures</div></div>
+        <div class="kpi-card"><div class="kpi-label">Incident Notif.</div><div class="kpi-value" id="compNotif" style="color:var(--accent-amber)">READY</div><div class="kpi-hint">24h / 72h timeline</div></div>
+        <div class="kpi-card"><div class="kpi-label">Audit Log</div><div class="kpi-value" id="compAudit" style="color:var(--accent-green)">ACTIVE</div><div class="kpi-hint">Event retention</div></div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-list-check"></i>NIS2 Article 21 — Security Measures</div></div>
+          <div id="compNIS2Table"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-lock"></i>GDPR Article 32 — Technical Controls</div></div>
+          <div id="compGDPRTable"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-bell"></i>Incident Notification Timeline (NIS2 / GDPR)</div></div>
+        <div id="compNotifTable"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-clipboard-check"></i>Compliance Assessments</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="runComplianceAssessment('all')"><i class="fa-solid fa-play"></i> Run Assessment</button>
+            <button class="btn" onclick="loadComplianceAssessments()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+        </div>
+        <div id="compAssessments"></div>
+      </div>
+    </div>
+
+    <!-- KPI / METRICS -->
+    <div class="page" id="page-kpi">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">MTTD</div><div class="kpi-value" id="kpiMTTD" style="color:var(--accent-cyan)"><span class="skeleton" style="width:50px">&nbsp;</span></div><div class="kpi-hint">Mean Time to Detect</div></div>
+        <div class="kpi-card"><div class="kpi-label">Events / Hour</div><div class="kpi-value" id="kpiEPH"><span class="skeleton" style="width:40px">&nbsp;</span></div><div class="kpi-hint">Ingestion rate</div></div>
+        <div class="kpi-card"><div class="kpi-label">Critical Alerts</div><div class="kpi-value" id="kpiCriticalOpen" style="color:var(--accent-red)"><span class="skeleton" style="width:30px">&nbsp;</span></div><div class="kpi-hint">Unresolved</div></div>
+        <div class="kpi-card"><div class="kpi-label">Coverage</div><div class="kpi-value" id="kpiCoverage" style="color:var(--accent-green)">--</div><div class="kpi-hint">Active modules</div></div>
+      </div>
+      <div class="two-col">
+        <div class="panel kpi-chart">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-chart-bar"></i>Events by Severity</div></div>
+          <canvas id="kpiSevChart" style="max-height:200px"></canvas>
+        </div>
+        <div class="panel kpi-chart">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-chart-pie"></i>Detection Coverage by Module</div></div>
+          <canvas id="kpiModChart" style="max-height:200px"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-table"></i>Metric Targets vs Actuals (Blueprint Goals)</div></div>
+        <div id="kpiTargetTable"></div>
+      </div>
+    </div>
+
+    <!-- ROADMAP -->
+    <div class="page" id="page-roadmap">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Core Layers</div><div class="kpi-value" style="color:var(--accent-blue)">6</div><div class="kpi-hint">Defense in depth</div><i class="fa-solid fa-layer-group kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Native Modules</div><div class="kpi-value" style="color:var(--accent-green)">8</div><div class="kpi-hint">Orchestrator, endpoint, network, SIEM, SOAR, TI, vuln, ML</div><i class="fa-solid fa-cubes kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">External Tools</div><div class="kpi-value" id="roadmapToolCount" style="color:var(--accent-amber)">--</div><div class="kpi-hint">Detected on this host</div><i class="fa-solid fa-screwdriver-wrench kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Data Mode</div><div class="kpi-value" style="color:var(--accent-green);font-size:28px">REAL</div><div class="kpi-hint">No fabricated event source</div><i class="fa-solid fa-database kpi-icon"></i></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-route"></i> Personal Cybersecurity Suite Roadmap</div>
+          <button class="btn" onclick="loadRoadmapToolCount()"><i class="fa-solid fa-rotate"></i></button>
+        </div>
+        <table class="table">
+          <thead><tr><th>Layer</th><th>Stato reale nel progetto</th><th>Modulo/azione disponibile</th><th>Gap operativo</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Perimetro</strong></td>
+              <td><span class="badge high">partial</span></td>
+              <td>CrowdSec ingest, SOAR playbook definitions, WireGuard availability inventory</td>
+              <td>Installare/configurare CrowdSec bouncer e WireGuard; AEGIS non forza blocchi senza backend reale.</td>
+            </tr>
+            <tr>
+              <td><strong>Endpoint</strong></td>
+              <td><span class="badge low">implemented</span></td>
+              <td>Windows audit, Defender status, process/connection inspection, YARA/hash scan, secrets sweep, ClamAV path scan, OSQuery agent support</td>
+              <td>Installare ClamAV, OSQuery, Gitleaks/TruffleHog se si vogliono quei motori esterni.</td>
+            </tr>
+            <tr>
+              <td><strong>Rete</strong></td>
+              <td><span class="badge low">implemented</span></td>
+              <td>LAN discovery, authorized host scan, Nmap enrichment when installed, TLS inspector, topology, Suricata ingest</td>
+              <td>Suricata deve essere avviato come servizio esterno o container; OT aggressive scan resta opt-in.</td>
+            </tr>
+            <tr>
+              <td><strong>Identità</strong></td>
+              <td><span class="badge high">partial</span></td>
+              <td>Secrets sweeper locale, Vaultwarden/OpenBao service inventory, hardening checks for risky local accounts</td>
+              <td>Vaultwarden/OpenBao sono rilevati se installati/configurati; non vengono creati vault automaticamente.</td>
+            </tr>
+            <tr>
+              <td><strong>Dati</strong></td>
+              <td><span class="badge high">partial</span></td>
+              <td>BitLocker audit, report/export, event persistence, integrity-focused endpoint audit</td>
+              <td>Age/BorgBackup/VeraCrypt non sono ancora integrati come job eseguibili; serve configurazione esplicita dei percorsi backup.</td>
+            </tr>
+            <tr>
+              <td><strong>Intelligence</strong></td>
+              <td><span class="badge high">partial</span></td>
+              <td>Threat intel lookup, CVE search, vulnerability module, ML service, OpenVAS/GVM/Nikto/Lynis availability inventory</td>
+              <td>OpenVAS/GVM e Nikto richiedono installazione e target autorizzati prima di lanciare scan reali.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-shield-halved"></i> Operazioni pronte</div></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">
+            <button class="btn" onclick="navTo('endpoint')"><i class="fa-solid fa-shield-virus"></i> Endpoint audit</button>
+            <button class="btn" onclick="navTo('network')"><i class="fa-solid fa-network-wired"></i> Network scan</button>
+            <button class="btn" onclick="navTo('vuln')"><i class="fa-solid fa-bug"></i> CVE checks</button>
+            <button class="btn" onclick="navTo('assets')"><i class="fa-solid fa-server"></i> Asset inventory</button>
+            <button class="btn" onclick="navTo('reports')"><i class="fa-solid fa-file-shield"></i> Reports</button>
+            <button class="btn" onclick="navTo('compliance')"><i class="fa-solid fa-scale-balanced"></i> Compliance</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-triangle-exclamation"></i> Limiti dichiarati</div></div>
+          <ul style="margin:0;padding-left:18px;font-size:12.5px;line-height:1.7;color:var(--text-muted)">
+            <li>Nessun tool offensivo/C2 viene integrato o lanciato.</li>
+            <li>Le scansioni di rete devono restare su sistemi propri o autorizzati.</li>
+            <li>I tool esterni vengono rilevati o chiamati solo se presenti nel PATH o configurati via variabile ambiente.</li>
+            <li>Quando un modulo è offline, la dashboard espone errore/offline invece di costruire risultati.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="two-col">
+        <!-- LEFT COL -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <!-- System Info -->
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-circle-info"></i>System Info</div></div>
+            <div class="settings-section">
+              <div class="two-col" style="gap:8px">
+                <div><div class="settings-label">Project</div><input type="text" id="cfgProject" value="Cybersecurity-AEGIS" readonly></div>
+                <div><div class="settings-label">Version</div><input type="text" id="cfgVersion" value="1.0.0" readonly></div>
+              </div>
+              <div style="margin-top:8px"><div class="settings-label">Orchestrator Bind</div><input type="text" id="cfgBind" value="0.0.0.0:8070" readonly></div>
+              <div style="margin-top:8px"><div class="settings-label">PostgreSQL Connection</div><input type="text" id="cfgDB" placeholder="Not configured (in-memory mode)"></div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+              <button class="btn" onclick="exportEvents()"><i class="fa-solid fa-download"></i> Export JSON</button>
+              <button class="btn" onclick="exportEventsCSV()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+              <!-- Seed controls removed: real telemetry only -->
+              <button class="btn" onclick="location.reload()"><i class="fa-solid fa-rotate"></i> Reload</button>
+            </div>
+          </div>
+
+          <!-- API Key / Auth -->
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-key"></i>API Key / Authentication</div></div>
+            <div class="settings-label">Current API Key (stored locally)</div>
+            <div style="display:flex;gap:8px;margin-bottom:10px">
+              <input type="password" id="settingsApiKey" placeholder="Paste key here to authenticate all requests" style="flex:1">
+              <button class="btn primary" onclick="saveApiKey()"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+              <button class="btn" onclick="clearApiKey()"><i class="fa-solid fa-trash"></i></button>
+            </div>
+            <div id="apiKeyStatus" style="font-size:11px;color:var(--text-muted)">Key is sent as <code>Authorization: Bearer &lt;key&gt;</code> on every API request. Set <code>AEGIS_API_KEY</code> env var on the server to enable auth.</div>
+          </div>
+
+          <!-- Data Management -->
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-database"></i>Data Management</div></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn" onclick="window.open(API+'/events/export?limit=1000','_blank')"><i class="fa-solid fa-download"></i> Export Last 1000 Events</button>
+              <button class="btn" onclick="window.open(API+'/events/export/csv','_blank')"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+              <button class="btn" onclick="window.open(API+'/playbooks','_blank')"><i class="fa-solid fa-book"></i> View Playbooks JSON</button>
+              <button class="btn" onclick="window.open(API+'/metrics','_blank')"><i class="fa-solid fa-chart-line"></i> Raw Metrics</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COL -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <!-- Module Health -->
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-heart-pulse"></i>Module Health</div><button class="btn" onclick="loadModuleHealth()"><i class="fa-solid fa-rotate"></i></button></div>
+            <div id="moduleHealthList">
+              <div class="module-health-row"><span><span class="status-dot offline" id="dot-orchestrator"></span>Orchestrator :8080</span><span id="stat-orchestrator" style="font-size:11px;color:var(--text-muted)">Checking...</span></div>
+              <div class="module-health-row"><span><span class="status-dot offline" id="dot-network"></span>Network :8081</span><span id="stat-network" style="font-size:11px;color:var(--text-muted)">Checking...</span></div>
+              <div class="module-health-row"><span><span class="status-dot offline" id="dot-siem"></span>SIEM :8082</span><span id="stat-siem" style="font-size:11px;color:var(--text-muted)">Checking...</span></div>
+              <div class="module-health-row"><span><span class="status-dot offline" id="dot-soar"></span>SOAR :8083</span><span id="stat-soar" style="font-size:11px;color:var(--text-muted)">Checking...</span></div>
+              <div class="module-health-row"><span><span class="status-dot offline" id="dot-ti"></span>Threat Intel :8084</span><span id="stat-ti" style="font-size:11px;color:var(--text-muted)">Checking...</span></div>
+              <div class="module-health-row"><span><span class="status-dot offline" id="dot-vuln"></span>Vuln Scanner :8085</span><span id="stat-vuln" style="font-size:11px;color:var(--text-muted)">Checking...</span></div>
+              <div class="module-health-row"><span><span class="status-dot offline" id="dot-ot"></span>OT Monitor :8087</span><span id="stat-ot" style="font-size:11px;color:var(--text-muted)">Checking...</span></div>
+              <div class="module-health-row"><span><span class="status-dot offline" id="dot-endpoint"></span>Endpoint :8088</span><span id="stat-endpoint" style="font-size:11px;color:var(--text-muted)">Checking...</span></div>
+              <div class="module-health-row"><span><span class="status-dot offline" id="dot-ml"></span>CyberShield AI :8919</span><span id="stat-ml" style="font-size:11px;color:var(--text-muted)">Checking...</span></div>
+            </div>
+          </div>
+
+          <!-- Notifications -->
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-bell"></i>Notifications</div></div>
+            <div class="settings-label" style="margin-bottom:10px">Telegram Bot</div>
+            <div style="display:flex;gap:8px;margin-bottom:6px">
+              <input type="text" id="notifTgToken" placeholder="Bot Token (from @BotFather)" style="flex:1">
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+              <input type="text" id="notifTgChat" placeholder="Chat ID (numeric)" style="flex:1">
+              <button class="btn primary" onclick="saveNotifSettings()"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+              <button class="btn" onclick="testNotification()"><i class="fa-solid fa-paper-plane"></i> Test</button>
+            </div>
+            <div class="settings-label" style="margin-bottom:10px">Slack Webhook</div>
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+              <input type="text" id="notifSlack" placeholder="https://hooks.slack.com/services/..." style="flex:1">
+            </div>
+            <div class="settings-label" style="margin-bottom:10px">Alert Thresholds</div>
+            <div class="two-col" style="gap:8px">
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Min. severity to notify</div>
+                <select id="notifMinSev">
+                  <option value="critical">Critical only</option>
+                  <option value="high" selected>High + Critical</option>
+                  <option value="medium">Medium and above</option>
+                  <option value="low">All alerts</option>
+                </select>
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Notification cooldown</div>
+                <select id="notifCooldown">
+                  <option value="60">1 minute</option>
+                  <option value="300" selected>5 minutes</option>
+                  <option value="900">15 minutes</option>
+                  <option value="3600">1 hour</option>
+                </select>
+              </div>
+            </div>
+            <div id="notifStatus" style="margin-top:10px;font-size:11px;color:var(--text-muted)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- DFIR — Digital Forensics & Incident Response -->
+    <div class="page" id="page-dfir">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Open Incidents</div><div class="kpi-value" id="dfirOpenInc" style="color:var(--accent-red)">--</div><div class="kpi-hint">Unresolved critical/high</div><i class="fa-solid fa-triangle-exclamation kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Evidence Items</div><div class="kpi-value" id="dfirEvidence" style="color:var(--accent-cyan)">0</div><div class="kpi-hint">Artifacts in custody</div><i class="fa-solid fa-file-shield kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">MTTD (SIEM)</div><div class="kpi-value" id="dfirMTTD" style="color:var(--accent-amber)">--</div><div class="kpi-hint">Mean time to detect</div><i class="fa-solid fa-stopwatch kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Triage Progress</div><div class="kpi-value" id="dfirTriage" style="color:var(--text-muted)">0/14</div><div class="kpi-hint">IR checklist steps done</div><i class="fa-solid fa-list-check kpi-icon"></i></div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-clock-rotate-left"></i>Incident Timeline</div>
+            <div style="display:flex;gap:6px">
+              <select id="dfirIncidentSelect" onchange="renderDFIRTimeline()" style="width:200px;font-size:12px">
+                <option value="all">All Critical / High Events</option>
+              </select>
+              <button class="btn" onclick="exportDFIRTimeline()" title="Export timeline JSON"><i class="fa-solid fa-download"></i></button>
+              <button class="btn" onclick="loadDFIR()"><i class="fa-solid fa-rotate"></i></button>
+            </div>
+          </div>
+          <div id="dfirTimeline" class="incident-timeline" style="max-height:460px;overflow-y:auto"><div class="muted">Loading incident timeline...</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-box-archive"></i>Evidence Registry</div><button class="btn primary" onclick="addEvidenceItem()"><i class="fa-solid fa-plus"></i> Add</button></div>
+          <div id="dfirEvidenceList" style="max-height:220px;overflow-y:auto"><div class="muted" style="padding:10px">No evidence items yet. Click Add to register forensic artifacts.</div></div>
+          <div class="panel-header" style="margin-top:12px"><div class="panel-title"><i class="fa-solid fa-link"></i>Chain of Custody</div></div>
+          <div id="dfirChainOfCustody" style="max-height:200px;overflow-y:auto"><div class="muted" style="padding:10px">No evidence in custody chain.</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-list-check"></i>IR Triage Checklist — NIST SP 800-61 / SANS PICERL</div><button class="btn" onclick="resetDFIRChecklist()"><i class="fa-solid fa-rotate"></i> Reset</button></div>
+        <div id="dfirChecklist" style="display:grid;grid-template-columns:1fr 1fr;gap:0 20px"></div>
+      </div>
+    </div>
+
+    <!-- ASSET INVENTORY -->
+    <div class="page" id="page-assets">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Total Assets</div><div class="kpi-value" id="assetTotal"><span class="skeleton" style="width:40px">&nbsp;</span></div><div class="kpi-hint">Discovered</div><i class="fa-solid fa-server kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">High Risk</div><div class="kpi-value" id="assetHighRisk" style="color:var(--accent-red)"><span class="skeleton" style="width:30px">&nbsp;</span></div><div class="kpi-hint">Score &ge; 70</div><i class="fa-solid fa-triangle-exclamation kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Unpatched</div><div class="kpi-value" id="assetUnpatched" style="color:var(--accent-amber)"><span class="skeleton" style="width:30px">&nbsp;</span></div><div class="kpi-hint">Known CVEs present</div><i class="fa-solid fa-bug kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">OT Devices</div><div class="kpi-value" id="assetOT" style="color:var(--accent-cyan)"><span class="skeleton" style="width:30px">&nbsp;</span></div><div class="kpi-hint">PLC / HMI / RTU</div><i class="fa-solid fa-industry kpi-icon"></i></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-server"></i>Asset Inventory — Risk Register</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="text" id="assetSearch" placeholder="Filter by IP, hostname, OS..." style="width:210px" oninput="filterAssets()">
+            <select id="assetFilter" onchange="filterAssets()" style="width:130px">
+              <option value="all">All types</option>
+              <option value="server">Servers</option>
+              <option value="workstation">Workstations</option>
+              <option value="ot">OT / ICS</option>
+              <option value="network">Network</option>
+            </select>
+            <button class="btn primary" onclick="loadAssets()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+        </div>
+        <div id="assetTable"><div class="muted">Loading asset inventory...</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-map"></i>Risk Distribution by Subnet</div></div>
+        <div id="assetSubnetMap"><div class="muted">Loading subnet risk map...</div></div>
+      </div>
+    </div>
+
+    <!-- HONEYPOT / DECEPTION -->
+    <div class="page" id="page-honeypot">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Active Canaries</div><div class="kpi-value" id="hpyActive" style="color:var(--accent-green)">--</div><div class="kpi-hint">Deployed traps</div><i class="fa-solid fa-spider kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Triggers Today</div><div class="kpi-value" id="hpyTriggers" style="color:var(--accent-red)">--</div><div class="kpi-hint">Attacker interactions</div><i class="fa-solid fa-bell kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Unique Attackers</div><div class="kpi-value" id="hpyAttackers" style="color:var(--accent-amber)">--</div><div class="kpi-hint">Distinct source IPs</div><i class="fa-solid fa-user-secret kpi-icon"></i></div>
+        <div class="kpi-card"><div class="kpi-label">Threat Level</div><div class="kpi-value" id="hpyThreatLevel" style="color:var(--accent-amber)">--</div><div class="kpi-hint">Based on trigger type</div><i class="fa-solid fa-gauge-high kpi-icon"></i></div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-tower-broadcast"></i>Live Canary Trigger Feed</div>
+            <div><span class="canary-pulse" style="margin-right:5px"></span><span class="muted" style="font-size:11px">Armed</span></div>
+          </div>
+          <div id="hpyFeed" style="max-height:320px;overflow-y:auto"><div class="muted" style="padding:12px">No interactions detected. Canaries are armed and monitoring.</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-chess-board"></i>Deception Coverage — Active Traps</div></div>
+          <div id="hpyTraps"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-user-secret"></i>Attacker Profile Analysis</div></div>
+        <div id="hpyAttackerProfiles"><div class="muted">Attacker profiles will appear after deception triggers are recorded.</div></div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="page" id="page-reports">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Report Disponibili</div><div class="kpi-value" id="rptCount" style="color:var(--accent-cyan)">0</div><div class="kpi-hint">Salvati su disco</div></div>
+        <div class="kpi-card"><div class="kpi-label">Ultimo Report</div><div class="kpi-value" id="rptLast" style="font-size:14px">—</div><div class="kpi-hint">Timestamp</div></div>
+        <div class="kpi-card"><div class="kpi-label">Host Scansionati</div><div class="kpi-value" id="rptHosts">—</div><div class="kpi-hint">Dall'ultimo scan</div></div>
+        <div class="kpi-card"><div class="kpi-label">CVE Trovati</div><div class="kpi-value" id="rptCves" style="color:var(--accent-red)">—</div><div class="kpi-hint">Vulnerabilità rilevate</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-file-export"></i>Genera Report AEGIS</div>
+          <span class="muted" style="font-size:12px">Aggrega dati in tempo reale da tutti i moduli</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;padding:8px 0 16px">
+          <!-- HTML Report -->
+          <div style="padding:18px;background:var(--surface-3);border-radius:8px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <i class="fa-solid fa-file-code" style="font-size:24px;color:var(--accent-blue)"></i>
+              <div>
+                <div style="font-weight:600">Security Report HTML</div>
+                <div style="font-size:11px;color:var(--text-muted)">Report completo — dark theme, sezioni compliance</div>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted)">Include: KPI, rete, CVE, SIEM, Threat Intel, remediazioni</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn primary" onclick="downloadReport('html')" style="flex:1"><i class="fa-solid fa-download"></i> Scarica HTML</button>
+              <button class="btn" onclick="previewReport()" style="flex:1"><i class="fa-solid fa-eye"></i> Anteprima</button>
+            </div>
+          </div>
+          <!-- JSON Report -->
+          <div style="padding:18px;background:var(--surface-3);border-radius:8px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <i class="fa-solid fa-code" style="font-size:24px;color:var(--accent-green)"></i>
+              <div>
+                <div style="font-weight:600">Security Report JSON</div>
+                <div style="font-size:11px;color:var(--text-muted)">Dati strutturati — integrabile con SIEM/SOAR</div>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted)">Formato macchina: executive summary, KPI, array events</div>
+            <div style="display:flex;gap:8px">
+              <button class="btn primary" onclick="downloadReport('json')" style="flex:1"><i class="fa-solid fa-download"></i> Scarica JSON</button>
+            </div>
+          </div>
+          <!-- Full Scan + Report -->
+          <div style="padding:18px;background:var(--surface-3);border-radius:8px;border:1px solid var(--border);display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <i class="fa-solid fa-magnifying-glass-chart" style="font-size:24px;color:var(--accent-amber)"></i>
+              <div>
+                <div style="font-weight:600">Scansione Completa + Report</div>
+                <div style="font-size:11px;color:var(--text-muted)">LAN scan → CVE scan → genera report</div>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted)">Esegui tutto il pipeline e scarica il risultato</div>
+            <div style="display:flex;gap:8px">
+              <button class="btn primary" onclick="runFullPipelineReport()" style="flex:1"><i class="fa-solid fa-bolt"></i> Full Scan &amp; Report</button>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0">
+          <span class="muted" style="font-size:12px">Range dati:</span>
+          <select id="reportDateRange" style="width:140px;font-size:12px">
+            <option value="24h">Ultime 24h</option>
+            <option value="7d">Ultimi 7 giorni</option>
+            <option value="30d">Ultimi 30 giorni</option>
+            <option value="all">Tutto</option>
+          </select>
+        </div>
+        <!-- Status bar -->
+        <div id="rptStatusBar" style="display:none;padding:10px 14px;background:var(--surface-3);border-radius:6px;font-size:12px;border-left:3px solid var(--accent-blue)">
+          <i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i><span id="rptStatusTxt">Generazione in corso...</span>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-clock-rotate-left"></i>Report Salvati</div><button class="btn" onclick="loadReportList()"><i class="fa-solid fa-rotate"></i></button></div>
+        <div id="reportHistory"><div class="empty-state"><i class="fa-solid fa-file-circle-check"></i><div>Nessun report salvato. Clicca <strong>Scarica HTML</strong> con salvataggio.</div></div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ TOPOLOGY ══ -->
+    <div class="page" id="page-topology">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Total Nodes</div><div class="kpi-value" id="topoNodes" style="color:var(--accent-cyan)">—</div><div class="kpi-hint">Discovered hosts</div></div>
+        <div class="kpi-card"><div class="kpi-label">Attack Paths</div><div class="kpi-value" id="topoAttackPaths" style="color:var(--accent-red)">—</div><div class="kpi-hint">Exploitable routes</div></div>
+        <div class="kpi-card"><div class="kpi-label">OT Crossings</div><div class="kpi-value" id="topoOTCross" style="color:var(--accent-amber)">—</div><div class="kpi-hint">IT→OT boundaries</div></div>
+        <div class="kpi-card"><div class="kpi-label">Crown Jewels</div><div class="kpi-value" id="topoCrowns" style="color:var(--accent-green)">—</div><div class="kpi-hint">Critical assets</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-diagram-project"></i>Network Topology Map</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn primary" onclick="loadTopology()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+            <button class="btn" onclick="loadAttackPaths()"><i class="fa-solid fa-route"></i> Attack Paths</button>
+          </div>
+        </div>
+        <div id="topoLegend" style="display:flex;flex-wrap:wrap;gap:10px;padding:8px 0 12px;font-size:11px">
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;display:inline-block"></span>IT Host</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block"></span>OT Device</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block"></span>Network/Gateway</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block"></span>Crown Jewel</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;display:inline-block"></span>IoT Device</span>
+        </div>
+        <div id="topoGraph" style="width:100%;height:480px;background:var(--surface-3);border-radius:8px;border:1px solid var(--border);position:relative;overflow:hidden">
+          <div class="empty-state" id="topoEmpty"><i class="fa-solid fa-diagram-project"></i><div>Click <strong>Refresh</strong> to build topology from last scan results.</div></div>
+          <svg id="topoSVG" style="width:100%;height:100%;display:none"></svg>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px">Drag nodes to rearrange. Hover for details. Red dashed edges = attack paths.</div>
+      </div>
+      <!-- Attack Paths Panel -->
+      <div class="panel" id="attackPathsPanel" style="display:none">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-route"></i>Computed Attack Paths</div><button class="btn" onclick="document.getElementById('attackPathsPanel').style.display='none'"><i class="fa-solid fa-xmark"></i></button></div>
+        <div id="topoSegGaps" style="margin-bottom:12px"></div>
+        <div style="overflow-x:auto">
+          <table class="events-table" id="attackPathsTable">
+            <thead><tr><th>From</th><th>To</th><th>Hops</th><th>Risk Score</th><th>Crosses OT?</th><th>MITRE Techniques</th></tr></thead>
+            <tbody id="attackPathsTbody"><tr><td colspan="6" class="muted">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════ TLS INSPECTOR ══ -->
+    <div class="page" id="page-tls">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Scanned Endpoints</div><div class="kpi-value" id="tlsScanned" style="color:var(--accent-cyan)">—</div><div class="kpi-hint">TLS hosts analyzed</div></div>
+        <div class="kpi-card"><div class="kpi-label">C2 Fingerprints</div><div class="kpi-value" id="tlsC2" style="color:var(--accent-red)">—</div><div class="kpi-hint">JARM match known-bad</div></div>
+        <div class="kpi-card"><div class="kpi-label">Expired Certs</div><div class="kpi-value" id="tlsExpired" style="color:var(--accent-amber)">—</div><div class="kpi-hint">Certificates expired</div></div>
+        <div class="kpi-card"><div class="kpi-label">Weak Ciphers</div><div class="kpi-value" id="tlsWeak" style="color:var(--accent-amber)">—</div><div class="kpi-hint">RC4/3DES/EXPORT</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-lock"></i>TLS Deep Inspection</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn primary" onclick="tlsScanFromResults()"><i class="fa-solid fa-magnifying-glass"></i> Scan HTTPS from Last Scan</button>
+            <button class="btn" onclick="tlsSingleInspect()"><i class="fa-solid fa-plus"></i> Single Host</button>
+          </div>
+        </div>
+        <!-- Single host form (hidden by default) -->
+        <div id="tlsSingleForm" style="display:none;padding:10px 0 14px;border-bottom:1px solid var(--border);margin-bottom:12px">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+            <div>
+              <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Target IP</label>
+              <input type="text" id="tlsTargetIP" placeholder="192.168.1.1" style="width:150px">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Port</label>
+              <input type="number" id="tlsTargetPort" value="443" style="width:80px">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Hostname (opt)</label>
+              <input type="text" id="tlsTargetHost" placeholder="example.com" style="width:180px">
+            </div>
+            <button class="btn primary" onclick="doTLSInspect()" style="height:34px"><i class="fa-solid fa-play"></i> Inspect</button>
+          </div>
+        </div>
+        <!-- Progress -->
+        <div id="tlsProgress" style="display:none;margin-bottom:10px;padding:8px 12px;background:var(--surface-3);border-radius:6px;font-size:12px;border-left:3px solid var(--accent-blue)">
+          <i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i><span id="tlsProgressTxt">Inspecting TLS endpoints...</span>
+        </div>
+        <!-- Results table -->
+        <div style="overflow-x:auto">
+          <table class="events-table" id="tlsTable">
+            <thead><tr><th>IP:Port</th><th>JARM Hash</th><th>C2?</th><th>Cert CN</th><th>Expiry</th><th>Protocols</th><th>Risk</th><th>PCI DSS</th><th>NIST</th></tr></thead>
+            <tbody id="tlsTbody"><tr><td colspan="9" class="muted">Click "Scan HTTPS from Last Scan" to run TLS inspection on discovered HTTPS hosts.</td></tr></tbody>
+          </table>
+        </div>
+        <!-- Detail panel -->
+        <div id="tlsDetailPanel" style="display:none;margin-top:14px;padding:14px;background:var(--surface-3);border-radius:8px;border:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+            <strong id="tlsDetailTitle">TLS Detail</strong>
+            <button class="btn" style="padding:2px 8px;font-size:11px" onclick="document.getElementById('tlsDetailPanel').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div id="tlsDetailContent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════ THREAT CAMPAIGNS ══ -->
+    <div class="page" id="page-campaigns">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Active Campaigns</div><div class="kpi-value" id="campTotal" style="color:var(--accent-cyan)">—</div><div class="kpi-hint">Correlated kill-chains</div></div>
+        <div class="kpi-card"><div class="kpi-label">Critical</div><div class="kpi-value" id="campCritical" style="color:var(--accent-red)">—</div><div class="kpi-hint">Score ≥ 80</div></div>
+        <div class="kpi-card"><div class="kpi-label">Attributed Actors</div><div class="kpi-value" id="campActors" style="color:var(--accent-amber)">—</div><div class="kpi-hint">APT / threat groups</div></div>
+        <div class="kpi-card"><div class="kpi-label">MITRE Techniques</div><div class="kpi-value" id="campTechs" style="color:var(--accent-green)">—</div><div class="kpi-hint">Unique ATT&amp;CK IDs</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-satellite-dish"></i>Threat Fusion — Campaign Intelligence</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="campWindowSel" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12px">
+              <option value="10">Last 10 min</option>
+              <option value="60" selected>Last 1 hour</option>
+              <option value="360">Last 6 hours</option>
+              <option value="1440">Last 24 hours</option>
+            </select>
+            <button class="btn primary" onclick="loadCampaigns()"><i class="fa-solid fa-satellite-dish"></i> Analyze Now</button>
+            <button class="btn" onclick="loadCampaigns(true)"><i class="fa-solid fa-rotate"></i> Live Feed</button>
+          </div>
+        </div>
+        <!-- Stats row -->
+        <div id="campStats" style="display:none;padding:10px 0 14px;display:flex;gap:20px;flex-wrap:wrap">
+          <div style="font-size:11px;color:var(--text-muted)">Critical: <strong id="statCrit" style="color:var(--accent-red)">0</strong></div>
+          <div style="font-size:11px;color:var(--text-muted)">High: <strong id="statHigh" style="color:var(--accent-amber)">0</strong></div>
+          <div style="font-size:11px;color:var(--text-muted)">Medium: <strong id="statMed" style="color:#a78bfa">0</strong></div>
+          <div style="font-size:11px;color:var(--text-muted)">Low: <strong id="statLow" style="color:var(--text-muted)">0</strong></div>
+          <div style="font-size:11px;color:var(--text-muted)">Unique Actors: <strong id="statActors">0</strong></div>
+        </div>
+        <!-- Progress -->
+        <div id="campProgress" style="display:none;margin-bottom:10px;padding:8px 12px;background:var(--surface-3);border-radius:6px;font-size:12px;border-left:3px solid var(--accent-blue)">
+          <i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>Fetching events and correlating campaigns...
+        </div>
+        <!-- Campaign cards -->
+        <div id="campCards"><div class="empty-state"><i class="fa-solid fa-satellite-dish"></i><div>Click <strong>Analyze Now</strong> to run multi-source event correlation and detect attack campaigns.</div></div></div>
+      </div>
+      <!-- Kill chain legend -->
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-skull-crossbones"></i>Kill Chain Phase Legend — MITRE ATT&amp;CK</div></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;padding:6px 0">
+          <span style="padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#1e3a5f;color:#93c5fd">TA0043 Reconnaissance</span>
+          <span style="padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#3f2d02;color:#fcd34d">TA0001 Initial Access</span>
+          <span style="padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#2d1f4e;color:#c4b5fd">TA0002 Execution</span>
+          <span style="padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#1c2a1e;color:#6ee7b7">TA0003 Persistence</span>
+          <span style="padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#2a1f1f;color:#fca5a5">TA0007 Discovery</span>
+          <span style="padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#1a2a2a;color:#67e8f9">TA0008 Lateral Movement</span>
+          <span style="padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#2a2a1a;color:#fde68a">TA0010 Exfiltration</span>
+          <span style="padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;background:#2a1a1a;color:#fca5a5">TA0040 Impact</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUDIT LOG -->
+    <div class="page" id="page-audit">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Total Audit Entries</div><div class="kpi-value" id="auditTotal" style="color:var(--accent-blue)">0</div><div class="kpi-hint">Stored entries</div></div>
+        <div class="kpi-card"><div class="kpi-label">Errors</div><div class="kpi-value" id="auditErrors" style="color:var(--accent-red)">0</div><div class="kpi-hint">error / warning</div></div>
+        <div class="kpi-card"><div class="kpi-label">Last Action</div><div class="kpi-value" id="auditLast" style="font-size:14px">—</div><div class="kpi-hint">Most recent</div></div>
+        <div class="kpi-card"><div class="kpi-label">API Actions</div><div class="kpi-value" id="auditAPI" style="color:var(--accent-cyan)">0</div><div class="kpi-hint">vs system</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-clipboard-list"></i>Audit Log</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select id="auditFilterLevel" onchange="renderAuditLog()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12px">
+              <option value="">All Levels</option>
+              <option value="info">Info</option>
+              <option value="warning">Warning</option>
+              <option value="error">Error</option>
+              <option value="critical">Critical</option>
+            </select>
+            <select id="auditFilterSource" onchange="renderAuditLog()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12px">
+              <option value="">All Sources</option>
+              <option value="api">API</option>
+              <option value="system">System</option>
+              <option value="auth">Auth</option>
+            </select>
+            <input type="text" id="auditSearch" placeholder="Search action..." oninput="renderAuditLog()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12px;min-width:160px">
+            <button class="btn" onclick="loadAuditLog()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="events-table" id="auditTable"><thead><tr><th>Time</th><th>Action</th><th>Source</th><th>Detail</th><th>Client</th><th>Severity</th></tr></thead><tbody><tr><td colspan="6" class="muted">Loading...</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Integrations -->
+    <div class="page" id="page-integrations">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-puzzle-piece"></i>External Tool Integrations</div>
+          <button class="btn" onclick="loadIntegrations()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <div style="margin-bottom:12px;color:var(--text-muted);font-size:12px">Discover and monitor installed open-source security tools (Wazuh, Suricata, Zeek, Velociraptor, OpenVAS, MISP, OpenCTI, StackStorm, Keycloak, PacketFence, step-ca, Fleet, OpenCanary, Ghidra, Volatility, Malcolm, OpenPLC).</div>
+        <div id="integrationsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
+      </div>
+    </div>
+
+    <!-- Sigma Rules -->
+    <div class="page" id="page-sigma">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-code"></i>Sigma Detection-as-Code</div>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="sigmaSearch" placeholder="Search rules..." oninput="loadSigma()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12px;min-width:180px">
+            <select id="sigmaLevel" onchange="loadSigma()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12px">
+              <option value="">All Levels</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
+            </select>
+            <button class="btn" onclick="loadSigma()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="events-table" id="sigmaTable"><thead><tr><th>ID</th><th>Title</th><th>Level</th><th>Category</th><th>Tags</th><th>Status</th></tr></thead><tbody><tr><td colspan="6" class="muted">Loading...</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- OT Protocols -->
+    <div class="page" id="page-ot-protocols">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Safety Gate</div><div class="kpi-value" id="otSafeGate" style="color:var(--accent-green)">ON</div><div class="kpi-hint">Read-only default</div></div>
+        <div class="kpi-card"><div class="kpi-label">Modbus</div><div class="kpi-value" id="otModbusStatus" style="color:var(--text-muted)">—</div><div class="kpi-hint">pymodbus</div></div>
+        <div class="kpi-card"><div class="kpi-label">OPC UA</div><div class="kpi-value" id="otOpcuaStatus" style="color:var(--text-muted)">—</div><div class="kpi-hint">asyncua/opcua</div></div>
+        <div class="kpi-card"><div class="kpi-label">IEC 61850</div><div class="kpi-value" id="otIecStatus" style="color:var(--text-muted)">—</div><div class="kpi-hint">libiec61850</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-microchip"></i>OT Protocol Collectors</div>
+          <button class="btn" onclick="loadOTProtocols()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div style="background:var(--surface-2);padding:12px;border-radius:8px;border:1px solid var(--border)">
+            <div style="font-weight:700;margin-bottom:8px">Modbus TCP Read</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <input id="mbHost" placeholder="IP/host autorizzato" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12px">
+              <input id="mbPort" placeholder="Port" value="502" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12px">
+              <input id="mbUnit" placeholder="Unit ID" value="1" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12px">
+              <input id="mbCount" placeholder="Reg count" value="8" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12px">
+            </div>
+            <button class="btn" onclick="runModbusRead()"><i class="fa-solid fa-play"></i> Read Holding Registers</button>
+            <pre id="mbResult" style="margin-top:8px;font-size:11px;background:var(--surface-3);padding:8px;border-radius:6px;max-height:200px;overflow:auto"></pre>
+          </div>
+          <div style="background:var(--surface-2);padding:12px;border-radius:8px;border:1px solid var(--border)">
+            <div style="font-weight:700;margin-bottom:8px">OPC UA Browse</div>
+            <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:8px">
+              <input id="opcuaUrl" placeholder="opc.tcp://host-autorizzato:4840" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12px">
+            </div>
+            <button class="btn" onclick="runOpcuaBrowse()"><i class="fa-solid fa-play"></i> Browse Nodes</button>
+            <pre id="opcuaResult" style="margin-top:8px;font-size:11px;background:var(--surface-3);padding:8px;border-radius:6px;max-height:200px;overflow:auto"></pre>
+          </div>
+        </div>
+        <div style="color:var(--accent-orange);font-size:12px"><i class="fa-solid fa-triangle-exclamation"></i> OT actions are read-only by default. Containment requires human approval and maintenance window per NIST SP 800-82 Rev. 3.</div>
+      </div>
+    </div>
+
+    <!-- Evidence -->
+    <div class="page" id="page-evidence">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-folder-open"></i>Evidence Store</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="loadEvidence()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+            <button class="btn" onclick="verifyEvidence()"><i class="fa-solid fa-shield-halved"></i> Verify Hashes</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="events-table" id="evidenceTable"><thead><tr><th>ID</th><th>Filename</th><th>Case</th><th>Size</th><th>SHA-256</th><th>Immutable</th><th>Expires</th></tr></thead><tbody><tr><td colspan="7" class="muted">Loading...</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PKI -->
+    <div class="page" id="page-pki">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-key"></i>PKI / Certificate Management</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="loadPKI()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+            <button class="btn" onclick="checkCertExpiry()"><i class="fa-solid fa-clock"></i> Check Expiry</button>
+          </div>
+        </div>
+        <div id="pkiStatus" style="margin-bottom:12px"></div>
+        <div style="overflow-x:auto">
+          <table class="events-table" id="pkiTable"><thead><tr><th>CN</th><th>Type</th><th>Status</th><th>Not Before</th><th>Not After</th><th>Serial</th></tr></thead><tbody><tr><td colspan="6" class="muted">Loading...</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+</main>
+</div>
+
+<!-- Event Detail Modal -->
+<div class="modal-overlay" id="eventModal" onclick="if(event.target===this)closeEventModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div id="modalTime" style="color:var(--text-muted); font-size:11px; margin-bottom:4px"></div>
+        <h3 id="modalTitle">Event Detail</h3>
+      </div>
+      <button class="modal-close" onclick="closeEventModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+      <span class="badge" id="modalSeverity"></span>
+      <span class="badge info" id="modalSource"></span>
+      <span class="badge info" id="modalCategory"></span>
+    </div>
+    <div class="modal-section">
+      <h4>Description</h4>
+      <div id="modalDesc" style="font-size:13px; line-height:1.5"></div>
+    </div>
+    <div class="modal-section" id="modalMitreSection" style="display:none">
+      <h4>MITRE ATT&CK</h4>
+      <div id="modalMitre" style="font-size:12px"></div>
+    </div>
+    <div class="modal-section" id="modalOTSection" style="display:none">
+      <h4>OT Context</h4>
+      <div id="modalOT" style="font-size:12px"></div>
+    </div>
+    <div class="modal-section">
+      <h4>Raw JSON <button class="btn" style="padding:2px 8px; font-size:11px" onclick="toggleRawJson()">Toggle</button></h4>
+      <pre class="raw-json" id="modalRaw" style="display:none"></pre>
+    </div>
+    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
+      <button class="btn" onclick="copyModalJSON()"><i class="fa-solid fa-copy"></i> Copy JSON</button>
+      <button class="btn danger" onclick="escalateModalEvent()"><i class="fa-solid fa-arrow-up"></i> Escalate</button>
+      <button class="btn success" onclick="resolveModalEvent()"><i class="fa-solid fa-check"></i> Resolve</button>
+    </div>
+  </div>
+</div>
+
+<!-- Session Timeout Modal -->
+<div class="modal-overlay" id="sessionModal">
+  <div class="modal-box">
+    <h3>Session Timeout Warning</h3>
+    <p class="muted">Your session will expire soon due to inactivity.</p>
+    <div class="countdown" id="sessionCountdown">60</div>
+    <button class="btn primary" onclick="stayLoggedIn()">Stay Logged In</button>
+  </div>
+</div>
+
+<!-- Mobile Menu -->
+<div id="mobileMenu">
+  <div class="mobile-menu-header">
+    <div class="brand"><i class="fa-solid fa-shield-halved"></i><span>AEGIS-OMNI</span></div>
+    <button class="modal-close" onclick="toggleMobileMenu()"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <nav class="mobile-nav">
+    <div class="nav-item" data-page="overview" onclick="navTo('overview'); toggleMobileMenu();"><i class="fa-solid fa-gauge-high"></i><span>SOC Overview</span></div>
+    <div class="nav-item" data-page="shield" onclick="navTo('shield'); toggleMobileMenu();"><i class="fa-solid fa-shield-heart"></i><span>Shield Engine</span></div>
+    <div class="nav-item" data-page="network" onclick="navTo('network'); toggleMobileMenu();"><i class="fa-solid fa-network-wired"></i><span>Network</span></div>
+    <div class="nav-item" data-page="ot" onclick="navTo('ot'); toggleMobileMenu();"><i class="fa-solid fa-industry"></i><span>OT Control</span></div>
+    <div class="nav-item" data-page="siem" onclick="navTo('siem'); toggleMobileMenu();"><i class="fa-solid fa-list-check"></i><span>SIEM</span></div>
+    <div class="nav-item" data-page="soar" onclick="navTo('soar'); toggleMobileMenu();"><i class="fa-solid fa-robot"></i><span>SOAR</span></div>
+    <div class="nav-item" data-page="ti" onclick="navTo('ti'); toggleMobileMenu();"><i class="fa-solid fa-globe"></i><span>Threat Intel</span></div>
+    <div class="nav-item" data-page="vuln" onclick="navTo('vuln'); toggleMobileMenu();"><i class="fa-solid fa-bug"></i><span>Vulnerabilities</span></div>
+    <div class="nav-item" data-page="ml" onclick="navTo('ml'); toggleMobileMenu();"><i class="fa-solid fa-brain"></i><span>CyberShield AI</span></div>
+    <div class="nav-item" data-page="settings" onclick="navTo('settings'); toggleMobileMenu();"><i class="fa-solid fa-gear"></i><span>Settings</span></div>
+    <div class="nav-item" data-page="mitre" onclick="navTo('mitre'); toggleMobileMenu();"><i class="fa-solid fa-sitemap"></i><span>MITRE ATT&amp;CK</span></div>
+    <div class="nav-item" data-page="hunt" onclick="navTo('hunt'); toggleMobileMenu();"><i class="fa-solid fa-crosshairs"></i><span>Threat Hunt</span></div>
+    <div class="nav-item" data-page="compliance" onclick="navTo('compliance'); toggleMobileMenu();"><i class="fa-solid fa-shield-halved"></i><span>Compliance</span></div>
+    <div class="nav-item" data-page="kpi" onclick="navTo('kpi'); toggleMobileMenu();"><i class="fa-solid fa-chart-line"></i><span>KPI / Metrics</span></div>
+    <div style="height:1px;background:var(--border);margin:8px 0"></div>
+    <div class="nav-item" data-page="dfir" onclick="navTo('dfir'); toggleMobileMenu();"><i class="fa-solid fa-magnifying-glass-chart"></i><span>DFIR</span></div>
+    <div class="nav-item" data-page="assets" onclick="navTo('assets'); toggleMobileMenu();"><i class="fa-solid fa-server"></i><span>Asset Inventory</span></div>
+    <div class="nav-item" data-page="honeypot" onclick="navTo('honeypot'); toggleMobileMenu();"><i class="fa-solid fa-spider"></i><span>Deception</span></div>
+    <div class="nav-item" data-page="reports" onclick="navTo('reports'); toggleMobileMenu();"><i class="fa-solid fa-file-shield"></i><span>Reports</span></div>
+    <div style="height:1px;background:var(--border);margin:8px 0"></div>
+    <div class="nav-item" data-page="topology" onclick="navTo('topology'); toggleMobileMenu();"><i class="fa-solid fa-diagram-project"></i><span>Topology</span></div>
+    <div class="nav-item" data-page="tls" onclick="navTo('tls'); toggleMobileMenu();"><i class="fa-solid fa-lock"></i><span>TLS Inspector</span></div>
+    <div class="nav-item" data-page="campaigns" onclick="navTo('campaigns'); toggleMobileMenu();"><i class="fa-solid fa-satellite-dish"></i><span>Threat Campaigns</span></div>
+    <div class="nav-item" data-page="integrations" onclick="navTo('integrations'); toggleMobileMenu();"><i class="fa-solid fa-puzzle-piece"></i><span>Integrations</span></div>
+    <div class="nav-item" data-page="sigma" onclick="navTo('sigma'); toggleMobileMenu();"><i class="fa-solid fa-code"></i><span>Sigma Rules</span></div>
+    <div class="nav-item" data-page="ot-protocols" onclick="navTo('ot-protocols'); toggleMobileMenu();"><i class="fa-solid fa-microchip"></i><span>OT Protocols</span></div>
+    <div class="nav-item" data-page="evidence" onclick="navTo('evidence'); toggleMobileMenu();"><i class="fa-solid fa-folder-open"></i><span>Evidence</span></div>
+    <div class="nav-item" data-page="pki" onclick="navTo('pki'); toggleMobileMenu();"><i class="fa-solid fa-key"></i><span>PKI / mTLS</span></div>
+  </nav>
+</div>
+
+<!-- Bulk Actions Bar -->
+<div id="bulkBar">
+  <span id="bulkCount" style="font-weight:700; font-size:12px">0 selected</span>
+  <button class="btn success" onclick="bulkResolve()"><i class="fa-solid fa-check"></i> Resolve Selected</button>
+  <button class="btn" onclick="bulkExportJSON()"><i class="fa-solid fa-download"></i> Export Selected JSON</button>
+  <button class="btn" onclick="clearBulkSelection()"><i class="fa-solid fa-xmark"></i> Clear</button>
+</div>
+
+<script src="js/app.js?v=20260523-auth3"></script>
+</body>
+</html>

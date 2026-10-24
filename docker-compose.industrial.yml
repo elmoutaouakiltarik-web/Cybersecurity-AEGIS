@@ -1,0 +1,47 @@
+services:
+  ot-monitor:
+    profiles: ["industrial"]
+    build:
+      context: ./modules/industrial/ot_monitor
+      dockerfile: Dockerfile
+    container_name: cybersecurity-aegis-ot-monitor
+    restart: unless-stopped
+    environment:
+      OT_MONITOR_INTERFACE: "${OT_MONITOR_INTERFACE:-eth0}"
+      OT_MONITOR_SIMULATE: "${OT_MONITOR_SIMULATE:-true}"
+      OT_BASELINE_DAYS: "${OT_BASELINE_DAYS:-7}"
+      OT_ALERT_THRESHOLD: "${OT_ALERT_THRESHOLD:-3.0}"
+      OT_ORCHESTRATOR_URL: "${OT_ORCHESTRATOR_URL:-http://orchestrator:8080}"
+    command:
+      - "python"
+      - "main.py"
+      - "--simulate"
+    depends_on:
+      - orchestrator
+    networks:
+      - aegis-internal
+    volumes:
+      - ./config/ot-config.example.yaml:/app/config.yaml:ro
+
+  ot-monitor-passive-host:
+    profiles: ["industrial-host"]
+    build:
+      context: ./modules/industrial/ot_monitor
+      dockerfile: Dockerfile
+    container_name: cybersecurity-aegis-ot-monitor-host
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    environment:
+      OT_MONITOR_INTERFACE: "${OT_MONITOR_INTERFACE:-eth0}"
+      OT_MONITOR_SIMULATE: "false"
+      OT_BASELINE_DAYS: "${OT_BASELINE_DAYS:-7}"
+      OT_ALERT_THRESHOLD: "${OT_ALERT_THRESHOLD:-3.0}"
+      OT_ORCHESTRATOR_URL: "${OT_ORCHESTRATOR_URL:-http://127.0.0.1:8080}"
+    command:
+      - "python"
+      - "main.py"
+      - "--interface"
+      - "${OT_MONITOR_INTERFACE:-eth0}"

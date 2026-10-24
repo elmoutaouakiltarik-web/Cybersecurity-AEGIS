@@ -1,0 +1,937 @@
+package main
+
+import (
+	"context"
+	"crypto/rand"
+	"embed"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"flag"
+	"fmt"
+	"io/fs"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"strconv"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
+)
+
+//go:embed dashboard/*
+var dashboardFiles embed.FS
+
+type Severity string
+
+const (
+	SeverityCritical Severity = "critical"
+	SeverityHigh     Severity = "high"
+	SeverityMedium   Severity = "medium"
+	SeverityLow      Severity = "low"
+	SeverityInfo     Severity = "info"
+)
+
+type MITREAttack struct {
+	TacticID      string `json:"tactic_id,omitempty"`
+	TacticName    string `json:"tactic_name,omitempty"`
+	TechniqueID   string `json:"technique_id,omitempty"`
+	TechniqueName string `json:"technique_name,omitempty"`
+	IsICS         bool   `json:"is_ics"`
+}
+
+type OTContext struct {
+	Protocol    string `json:"protocol,omitempty"`
+	PurdueLevel int    `json:"purdue_level,omitempty"`
+	DeviceType  string `json:"device_type,omitempty"`
+	AssetID     string `json:"asset_id,omitempty"`
+	ProcessArea string `json:"process_area,omitempty"`
+}
+
+type SecurityEvent struct {
+	ID          string         `json:"id"`
+	Timestamp   time.Time      `json:"timestamp"`
+	Source      string         `json:"source"`
+	Category    string         `json:"category"`
+	Severity    Severity       `json:"severity"`
+	Title       string         `json:"title"`
+	Description string         `json:"description"`
+	MITRE       *MITREAttack   `json:"mitre,omitempty"`
+	OTContext   *OTContext     `json:"ot_context,omitempty"`
+	RawData     map[string]any `json:"raw_data,omitempty"`
+	Resolved    bool           `json:"resolved"`
+	Tags        []string       `json:"tags"`
+}
+
+type ModuleStatus struct {
+	Name          string    `json:"name"`
+	Status        string    `json:"status"`
+	Version       string    `json:"version"`
+	LastSeen      time.Time `json:"last_seen"`
+	UptimeSeconds int64     `json:"uptime_seconds"`
+	Events24h     int64     `json:"events_24h"`
+	Alerts24h     int64     `json:"alerts_24h"`
+	Error         string    `json:"error,omitempty"`
+}
+
+type SystemMetrics struct {
+	TotalEvents24h int64          `json:"total_events_24h"`
+	CriticalAlerts int64          `json:"critical_alerts"`
+	HighAlerts     int64          `json:"high_alerts"`
+	ActiveModules  int            `json:"active_modules"`
+	TotalModules   int            `json:"total_modules"`
+	ThreatScore    float64        `json:"threat_score"`
+	Modules        []ModuleStatus `json:"modules"`
+}
+
+type EventBus struct {
+	mu        sync.RWMutex
+	events    []SecurityEvent
+	maxEvents int
+}
+
+func NewEventBus(maxEvents int) *EventBus {
+	if maxEvents < 100 {
+		maxEvents = 100
+	}
+	return &EventBus{
+		events:    make([]SecurityEvent, 0, maxEvents),
+		maxEvents: maxEvents,
+	}
+}
+
+func (eb *EventBus) Publish(event SecurityEvent) SecurityEvent {
+	event = finalizeEvent(event)
+
+	eb.mu.Lock()
+	defer eb.mu.Unlock()
+	if len(eb.events) >= eb.maxEvents {
+		copy(eb.events, eb.events[1:])
+		eb.events[len(eb.events)-1] = event
+		return event
+	}
+	eb.events = append(eb.events, event)
+	return event
+}
+
+func (eb *EventBus) Recent(limit int, category string) []SecurityEvent {
+	eb.mu.RLock()
+	defer eb.mu.RUnlock()
+
+	if limit <= 0 || limit > 1000 {
+		limit = 100
+	}
+
+	out := make([]SecurityEvent, 0, limit)
+	for i := len(eb.events) - 1; i >= 0 && len(out) < limit; i-- {
+		ev := eb.events[i]
+		if category == "" || ev.Category == category {
+			out = append(out, ev)
+		}
+	}
+	return out
+}
+
+func (eb *EventBus) Count24h() (total int64, critical int64, high int64) {
+	eb.mu.RLock()
+	defer eb.mu.RUnlock()
+
+	cutoff := time.Now().Add(-24 * time.Hour)
+	for _, ev := range eb.events {
+		if ev.Timestamp.Before(cutoff) {
+			continue
+		}
+		total++
+		switch ev.Severity {
+		case SeverityCritical:
+			critical++
+		case SeverityHigh:
+			high++
+		}
+	}
+	return total, critical, high
+}
+
+type Orchestrator struct {
+	eventBus *EventBus
+	modules  map[string]*ModuleStatus
+	mu       sync.RWMutex
+	started  time.Time
+}
+
+func NewOrchestrator(maxEvents int) *Orchestrator {
+	o := &Orchestrator{
+		eventBus: NewEventBus(maxEvents),
+		modules:  map[string]*ModuleStatus{},
+		started:  time.Now(),
+	}
+	o.RegisterModule("orchestrator", "1.0.0")
+	return o
+}
+
+func (o *Orchestrator) RegisterModule(name, version string) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.modules[name] = &ModuleStatus{
+		Name:     name,
+		Status:   "running",
+		Version:  version,
+		LastSeen: time.Now(),
+	}
+}
+
+func (o *Orchestrator) UpdateModule(name, status, version, errText string) ModuleStatus {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	module, ok := o.modules[name]
+	if !ok {
+		module = &ModuleStatus{Name: name}
+		o.modules[name] = module
+	}
+	module.Status = firstNonEmpty(status, "unknown")
+	module.Version = firstNonEmpty(version, module.Version)
+	module.LastSeen = time.Now()
+	module.Error = errText
+	module.UptimeSeconds = int64(time.Since(o.started).Seconds())
+	return *module
+}
+
+func (o *Orchestrator) Metrics() SystemMetrics {
+	total, critical, high := o.eventBus.Count24h()
+
+	o.mu.RLock()
+	modules := make([]ModuleStatus, 0, len(o.modules))
+	active := 0
+	for _, module := range o.modules {
+		copyModule := *module
+		copyModule.UptimeSeconds = int64(time.Since(o.started).Seconds())
+		modules = append(modules, copyModule)
+		if copyModule.Status == "running" || copyModule.Status == "healthy" {
+			active++
+		}
+	}
+	o.mu.RUnlock()
+
+	score := float64(critical)*20 + float64(high)*5
+	if score > 100 {
+		score = 100
+	}
+
+	return SystemMetrics{
+		TotalEvents24h: total,
+		CriticalAlerts: critical,
+		HighAlerts:     high,
+		ActiveModules:  active,
+		TotalModules:   len(modules),
+		ThreatScore:    score,
+		Modules:        modules,
+	}
+}
+
+func (o *Orchestrator) Routes() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", o.handleHealth)
+	mux.HandleFunc("/api/v1/metrics", method(http.MethodGet, o.handleMetrics))
+	mux.HandleFunc("/api/v1/modules", o.handleModules)
+	mux.HandleFunc("/api/v1/modules/", o.handleModuleStatus)
+	mux.HandleFunc("/api/v1/events", o.handleEvents)
+	mux.HandleFunc("/api/v1/ingest/wazuh", method(http.MethodPost, o.handleIngestWazuh))
+	mux.HandleFunc("/api/v1/ingest/suricata", method(http.MethodPost, o.handleIngestSuricata))
+	mux.HandleFunc("/api/v1/ingest/crowdsec", method(http.MethodPost, o.handleIngestCrowdSec))
+	mux.HandleFunc("/api/v1/ingest/cybershield-ai", method(http.MethodPost, o.handleIngestCyberShieldAI))
+	mux.HandleFunc("/api/v1/ingest/ot", method(http.MethodPost, o.handleIngestOT))
+	mux.HandleFunc("/api/v1/ingest/network", method(http.MethodPost, o.handleIngestNetwork))
+	mux.HandleFunc("/api/v1/ingest/threat-intel", method(http.MethodPost, o.handleIngestThreatIntel))
+	mux.HandleFunc("/api/v1/ingest/vuln", method(http.MethodPost, o.handleIngestVuln))
+	mux.HandleFunc("/api/v1/ingest/generic", method(http.MethodPost, o.handleIngestGeneric))
+	mux.HandleFunc("/api/v1/ot/assets", method(http.MethodGet, o.handleOTAssets))
+	registerDashboardRoutes(mux)
+	return withCommonHeaders(mux)
+}
+
+func registerDashboardRoutes(mux *http.ServeMux) {
+	dashboardRoot, err := fs.Sub(dashboardFiles, "dashboard")
+	if err != nil {
+		mux.HandleFunc("/dashboard/", func(w http.ResponseWriter, r *http.Request) {
+			respondError(w, http.StatusInternalServerError, err)
+		})
+		return
+	}
+
+	mux.Handle("/dashboard/", http.StripPrefix("/dashboard/", http.FileServer(http.FS(dashboardRoot))))
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		http.Redirect(w, r, "/dashboard/", http.StatusFound)
+	})
+}
+
+func (o *Orchestrator) handleHealth(w http.ResponseWriter, r *http.Request) {
+	respondJSON(w, http.StatusOK, map[string]any{
+		"status":         "healthy",
+		"product":        "Cybersecurity-AEGIS",
+		"version":        "1.0.0",
+		"uptime_seconds": int64(time.Since(o.started).Seconds()),
+	})
+}
+
+func (o *Orchestrator) handleMetrics(w http.ResponseWriter, r *http.Request) {
+	respondJSON(w, http.StatusOK, o.Metrics())
+}
+
+func (o *Orchestrator) handleModules(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		respondJSON(w, http.StatusOK, o.Metrics().Modules)
+	case http.MethodPut:
+		var payload struct {
+			Name    string `json:"name"`
+			Status  string `json:"status"`
+			Version string `json:"version"`
+			Error   string `json:"error"`
+		}
+		if err := decodeJSON(r, &payload); err != nil {
+			respondError(w, http.StatusBadRequest, err)
+			return
+		}
+		if payload.Name == "" {
+			respondError(w, http.StatusBadRequest, errors.New("name is required"))
+			return
+		}
+		respondJSON(w, http.StatusOK, o.UpdateModule(payload.Name, payload.Status, payload.Version, payload.Error))
+	default:
+		respondError(w, http.StatusMethodNotAllowed, errors.New("method not allowed"))
+	}
+}
+
+func (o *Orchestrator) handleModuleStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		respondError(w, http.StatusMethodNotAllowed, errors.New("method not allowed"))
+		return
+	}
+
+	name := strings.TrimPrefix(r.URL.Path, "/api/v1/modules/")
+	name = strings.TrimSuffix(name, "/status")
+	name = strings.Trim(name, "/")
+	if name == "" {
+		respondError(w, http.StatusBadRequest, errors.New("module name is required"))
+		return
+	}
+
+	var payload struct {
+		Status  string `json:"status"`
+		Version string `json:"version"`
+		Error   string `json:"error"`
+	}
+	if err := decodeJSON(r, &payload); err != nil {
+		respondError(w, http.StatusBadRequest, err)
+		return
+	}
+	respondJSON(w, http.StatusOK, o.UpdateModule(name, payload.Status, payload.Version, payload.Error))
+}
+
+func (o *Orchestrator) handleEvents(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		limit := parseIntDefault(r.URL.Query().Get("limit"), 100)
+		category := r.URL.Query().Get("category")
+		respondJSON(w, http.StatusOK, o.eventBus.Recent(limit, category))
+	case http.MethodPost:
+		var event SecurityEvent
+		if err := decodeJSON(r, &event); err != nil {
+			respondError(w, http.StatusBadRequest, err)
+			return
+		}
+		respondJSON(w, http.StatusCreated, o.eventBus.Publish(event))
+	default:
+		respondError(w, http.StatusMethodNotAllowed, errors.New("method not allowed"))
+	}
+}
+
+func (o *Orchestrator) handleIngestWazuh(w http.ResponseWriter, r *http.Request) {
+	raw, err := decodeMap(r)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err)
+		return
+	}
+	respondJSON(w, http.StatusCreated, o.eventBus.Publish(normalizeWazuh(raw)))
+}
+
+func (o *Orchestrator) handleIngestSuricata(w http.ResponseWriter, r *http.Request) {
+	raw, err := decodeMap(r)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err)
+		return
+	}
+	respondJSON(w, http.StatusCreated, o.eventBus.Publish(normalizeSuricata(raw)))
+}
+
+func (o *Orchestrator) handleIngestCrowdSec(w http.ResponseWriter, r *http.Request) {
+	raw, err := decodeMap(r)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err)
+		return
+	}
+	respondJSON(w, http.StatusCreated, o.eventBus.Publish(normalizeCrowdSec(raw)))
+}
+
+func (o *Orchestrator) handleIngestCyberShieldAI(w http.ResponseWriter, r *http.Request) {
+	raw, err := decodeMap(r)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err)
+		return
+	}
+	respondJSON(w, http.StatusCreated, o.eventBus.Publish(normalizeCyberShieldAI(raw)))
+}
+
+func (o *Orchestrator) handleIngestOT(w http.ResponseWriter, r *http.Request) {
+	raw, err := decodeMap(r)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err)
+		return
+	}
+	respondJSON(w, http.StatusCreated, o.eventBus.Publish(normalizeOT(raw)))
+}
+
+func (o *Orchestrator) handleIngestNetwork(w http.ResponseWriter, r *http.Request) {
+	raw, err := decodeMap(r)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err)
+		return
+	}
+	respondJSON(w, http.StatusCreated, o.eventBus.Publish(normalizeNetwork(raw)))
+}
+
+func (o *Orchestrator) handleIngestThreatIntel(w http.ResponseWriter, r *http.Request) {
+	raw, err := decodeMap(r)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err)
+		return
+	}
+	respondJSON(w, http.StatusCreated, o.eventBus.Publish(normalizeThreatIntel(raw)))
+}
+
+func (o *Orchestrator) handleIngestVuln(w http.ResponseWriter, r *http.Request) {
+	raw, err := decodeMap(r)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err)
+		return
+	}
+	respondJSON(w, http.StatusCreated, o.eventBus.Publish(normalizeVuln(raw)))
+}
+
+func (o *Orchestrator) handleIngestGeneric(w http.ResponseWriter, r *http.Request) {
+	var event SecurityEvent
+	if err := decodeJSON(r, &event); err != nil {
+		respondError(w, http.StatusBadRequest, err)
+		return
+	}
+	respondJSON(w, http.StatusCreated, o.eventBus.Publish(event))
+}
+
+func (o *Orchestrator) handleOTAssets(w http.ResponseWriter, r *http.Request) {
+	respondJSON(w, http.StatusOK, map[string]any{
+		"assets": []any{},
+		"note":   "OT asset persistence is deferred in the MVP; passive monitor events include OT context.",
+	})
+}
+
+func normalizeNetwork(raw map[string]any) SecurityEvent {
+	detector := firstNonEmpty(asString(raw["detector"]), "network_analyzer")
+	title := firstNonEmpty(asString(raw["title"]), fmt.Sprintf("Network alert: %s", detector))
+	severity := normalizeSeverity(asString(raw["severity"]))
+	techniqueID := asString(raw["mitre_technique_id"])
+	techniqueName := firstNonEmpty(asString(raw["mitre_technique_name"]), asString(raw["mitre_technique"]))
+	event := SecurityEvent{
+		Source:      "network_analyzer",
+		Category:    "network",
+		Severity:    severity,
+		Title:       title,
+		Description: firstNonEmpty(asString(raw["description"]), title),
+		RawData:     raw,
+		Tags:        []string{"network", "passive", "aegis"},
+	}
+	if techniqueID != "" || techniqueName != "" {
+		event.MITRE = &MITREAttack{TechniqueID: techniqueID, TechniqueName: techniqueName}
+	}
+	return event
+}
+
+func normalizeThreatIntel(raw map[string]any) SecurityEvent {
+	ioc := firstNonEmpty(asString(raw["ioc"]), asString(raw["indicator"]))
+	iocType := firstNonEmpty(asString(raw["ioc_type"]), asString(raw["type"]))
+	title := firstNonEmpty(asString(raw["title"]), fmt.Sprintf("Threat Intel IOC: %s %s", iocType, ioc))
+	severity := normalizeSeverity(asString(raw["severity"]))
+	return SecurityEvent{
+		Source:      "threat_intel",
+		Category:    "threat_intelligence",
+		Severity:    severity,
+		Title:       title,
+		Description: firstNonEmpty(asString(raw["description"]), title),
+		RawData:     raw,
+		Tags:        []string{"threat_intel", "ioc", iocType},
+	}
+}
+
+func normalizeVuln(raw map[string]any) SecurityEvent {
+	cveID := asString(raw["cve_id"])
+	host := firstNonEmpty(asString(raw["host"]), asString(raw["target"]))
+	title := firstNonEmpty(asString(raw["title"]), fmt.Sprintf("Vulnerability: %s on %s", cveID, host))
+	severity := normalizeSeverity(asString(raw["severity"]))
+	event := SecurityEvent{
+		Source:      "vuln_scanner",
+		Category:    "vulnerability",
+		Severity:    severity,
+		Title:       title,
+		Description: firstNonEmpty(asString(raw["description"]), title),
+		RawData:     raw,
+		Tags:        []string{"vulnerability", "scanner"},
+	}
+	if cveID != "" {
+		event.Tags = append(event.Tags, cveID)
+	}
+	return event
+}
+
+func normalizeWazuh(raw map[string]any) SecurityEvent {
+	rule := asMap(raw["rule"])
+	level := asFloat(rule["level"])
+	description := firstNonEmpty(asString(rule["description"]), "Wazuh alert")
+	event := SecurityEvent{
+		Source:      "wazuh",
+		Category:    "endpoint",
+		Severity:    wazuhSeverity(level),
+		Title:       description,
+		Description: description,
+		RawData:     raw,
+		Tags:        []string{"wazuh", "endpoint", "siem"},
+	}
+
+	mitre := asMap(rule["mitre"])
+	if len(mitre) > 0 {
+		event.MITRE = &MITREAttack{
+			TacticName:    asString(mitre["tactic"]),
+			TechniqueID:   asString(mitre["id"]),
+			TechniqueName: asString(mitre["technique"]),
+		}
+	}
+	return event
+}
+
+func normalizeSuricata(raw map[string]any) SecurityEvent {
+	alert := asMap(raw["alert"])
+	title := firstNonEmpty(asString(alert["signature"]), "Suricata alert")
+	severity := SeverityMedium
+	if sev := int(asFloat(alert["severity"])); sev > 0 {
+		switch sev {
+		case 1:
+			severity = SeverityCritical
+		case 2:
+			severity = SeverityHigh
+		case 3:
+			severity = SeverityMedium
+		default:
+			severity = SeverityLow
+		}
+	}
+
+	return SecurityEvent{
+		Source:      "suricata",
+		Category:    "network",
+		Severity:    severity,
+		Title:       title,
+		Description: fmt.Sprintf("Suricata IDS alert: %s", title),
+		RawData:     raw,
+		Tags:        []string{"suricata", "network", "ids"},
+	}
+}
+
+func normalizeCrowdSec(raw map[string]any) SecurityEvent {
+	scenario := firstNonEmpty(asString(raw["scenario"]), asString(raw["type"]), "CrowdSec decision")
+	sourceIP := firstNonEmpty(asString(raw["source_ip"]), asString(raw["ip"]), "unknown")
+	severity := SeverityMedium
+	remediation := strings.ToLower(asString(raw["remediation"]))
+	if strings.Contains(remediation, "ban") || strings.Contains(remediation, "block") {
+		severity = SeverityHigh
+	}
+
+	return SecurityEvent{
+		Source:      "crowdsec",
+		Category:    "perimeter",
+		Severity:    severity,
+		Title:       fmt.Sprintf("CrowdSec: %s", scenario),
+		Description: fmt.Sprintf("CrowdSec decision for %s using scenario %s", sourceIP, scenario),
+		RawData:     raw,
+		Tags:        []string{"crowdsec", "perimeter", "reputation"},
+	}
+}
+
+func normalizeCyberShieldAI(raw map[string]any) SecurityEvent {
+	riskScore := firstNonZero(
+		asFloat(raw["risk_score"]),
+		asFloat(raw["risk"]),
+		asFloat(raw["score"]),
+	)
+	severity := riskSeverity(riskScore)
+	if riskLevel := asString(raw["risk_level"]); riskLevel != "" {
+		severity = normalizeSeverity(riskLevel)
+	}
+
+	// v0.3: cybershield_prediction / attack_family_prediction; v0.2 fallbacks preserved
+	binary := firstNonEmpty(
+		asString(raw["cybershield_prediction"]),
+		asString(raw["binary_prediction"]),
+		asString(raw["prediction"]),
+		asString(raw["label"]),
+		"unknown",
+	)
+	family := firstNonEmpty(
+		asString(raw["attack_family_prediction"]),
+		asString(raw["family_prediction"]),
+		asString(raw["attack_family"]),
+		asString(raw["family"]),
+		"unknown",
+	)
+	confidence := firstNonZero(asFloat(raw["attack_probability"]), asFloat(raw["confidence"]))
+
+	title := fmt.Sprintf("CyberShield AI: %s", strings.ToUpper(binary))
+	if family != "" && family != "unknown" {
+		title = fmt.Sprintf("%s / %s", title, family)
+	}
+
+	event := SecurityEvent{
+		Source:      "cybershield_ai",
+		Category:    "ml",
+		Severity:    severity,
+		Title:       title,
+		Description: firstNonEmpty(asString(raw["description"]), fmt.Sprintf("ML IDS classification risk %.0f confidence %.2f", riskScore, confidence)),
+		RawData:     raw,
+		Tags:        []string{"cybershield_ai", "ml", "ids", "nsl_kdd"},
+	}
+
+	if strings.EqualFold(family, "DoS") {
+		event.MITRE = &MITREAttack{TechniqueID: "T1499", TechniqueName: "Endpoint Denial of Service"}
+	} else if strings.EqualFold(family, "Probe") {
+		event.MITRE = &MITREAttack{TechniqueID: "T1046", TechniqueName: "Network Service Discovery"}
+	}
+	return event
+}
+
+func normalizeOT(raw map[string]any) SecurityEvent {
+	title := firstNonEmpty(asString(raw["title"]), "OT security event")
+	severity := normalizeSeverity(asString(raw["severity"]))
+	protocol := firstNonEmpty(asString(raw["protocol"]), "unknown")
+
+	event := SecurityEvent{
+		Source:      "ot_monitor",
+		Category:    "industrial",
+		Severity:    severity,
+		Title:       title,
+		Description: firstNonEmpty(asString(raw["description"]), title),
+		RawData:     raw,
+		Tags:        []string{"ot", "ics", "passive"},
+		OTContext: &OTContext{
+			Protocol:    protocol,
+			PurdueLevel: int(asFloat(raw["purdue_level"])),
+			DeviceType:  asString(raw["device_type"]),
+			AssetID:     asString(raw["asset_id"]),
+			ProcessArea: asString(raw["process_area"]),
+		},
+	}
+
+	techniqueID := asString(raw["mitre_technique_id"])
+	techniqueName := asString(raw["mitre_technique_name"])
+	if techniqueID != "" || techniqueName != "" {
+		event.MITRE = &MITREAttack{
+			TechniqueID:   techniqueID,
+			TechniqueName: techniqueName,
+			IsICS:         true,
+		}
+	}
+	return event
+}
+
+func finalizeEvent(event SecurityEvent) SecurityEvent {
+	if event.ID == "" {
+		event.ID = newID(event.Source)
+	}
+	if event.Timestamp.IsZero() {
+		event.Timestamp = time.Now().UTC()
+	}
+	event.Severity = normalizeSeverity(string(event.Severity))
+	event.Source = firstNonEmpty(event.Source, "generic")
+	event.Category = firstNonEmpty(event.Category, "general")
+	event.Title = firstNonEmpty(event.Title, "Security event")
+	event.Description = firstNonEmpty(event.Description, event.Title)
+	if event.Tags == nil {
+		event.Tags = []string{}
+	}
+	if event.RawData == nil {
+		event.RawData = map[string]any{}
+	}
+	return event
+}
+
+func wazuhSeverity(level float64) Severity {
+	switch {
+	case level >= 15:
+		return SeverityCritical
+	case level >= 12:
+		return SeverityHigh
+	case level >= 8:
+		return SeverityMedium
+	case level > 0:
+		return SeverityLow
+	default:
+		return SeverityInfo
+	}
+}
+
+func normalizeSeverity(value string) Severity {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "critical", "crit":
+		return SeverityCritical
+	case "high":
+		return SeverityHigh
+	case "medium", "warn", "warning":
+		return SeverityMedium
+	case "low":
+		return SeverityLow
+	case "info", "informational", "":
+		return SeverityInfo
+	default:
+		return SeverityMedium
+	}
+}
+
+func method(expected string, handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != expected {
+			respondError(w, http.StatusMethodNotAllowed, errors.New("method not allowed"))
+			return
+		}
+		handler(w, r)
+	}
+}
+
+func withCommonHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func respondJSON(w http.ResponseWriter, status int, value any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(value); err != nil {
+		log.Printf("encode response: %v", err)
+	}
+}
+
+func respondError(w http.ResponseWriter, status int, err error) {
+	respondJSON(w, status, map[string]any{"error": err.Error()})
+}
+
+func decodeJSON(r *http.Request, dst any) error {
+	defer r.Body.Close()
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(dst); err != nil {
+		return err
+	}
+	return nil
+}
+
+func decodeMap(r *http.Request) (map[string]any, error) {
+	var raw map[string]any
+	if err := decodeJSON(r, &raw); err != nil {
+		return nil, err
+	}
+	if raw == nil {
+		raw = map[string]any{}
+	}
+	return raw, nil
+}
+
+func asMap(value any) map[string]any {
+	if value == nil {
+		return map[string]any{}
+	}
+	if m, ok := value.(map[string]any); ok {
+		return m
+	}
+	return map[string]any{}
+}
+
+func asString(value any) string {
+	switch v := value.(type) {
+	case string:
+		return v
+	case fmt.Stringer:
+		return v.String()
+	case nil:
+		return ""
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+func asFloat(value any) float64 {
+	switch v := value.(type) {
+	case float64:
+		return v
+	case float32:
+		return float64(v)
+	case int:
+		return float64(v)
+	case int64:
+		return float64(v)
+	case json.Number:
+		f, _ := v.Float64()
+		return f
+	case string:
+		f, _ := strconv.ParseFloat(v, 64)
+		return f
+	default:
+		return 0
+	}
+}
+
+func firstNonZero(values ...float64) float64 {
+	for _, value := range values {
+		if value != 0 {
+			return value
+		}
+	}
+	return 0
+}
+
+func riskSeverity(score float64) Severity {
+	switch {
+	case score >= 85:
+		return SeverityCritical
+	case score >= 65:
+		return SeverityHigh
+	case score >= 35:
+		return SeverityMedium
+	case score > 0:
+		return SeverityLow
+	default:
+		return SeverityInfo
+	}
+}
+
+func parseIntDefault(value string, fallback int) int {
+	if value == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(value)
+	if err != nil {
+		return fallback
+	}
+	return n
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+func newID(prefix string) string {
+	prefix = strings.TrimSpace(prefix)
+	if prefix == "" {
+		prefix = "event"
+	}
+	buf := make([]byte, 8)
+	if _, err := rand.Read(buf); err != nil {
+		return fmt.Sprintf("%s-%d", prefix, time.Now().UnixNano())
+	}
+	return fmt.Sprintf("%s-%s", prefix, hex.EncodeToString(buf))
+}
+
+func envInt(key string, fallback int) int {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return fallback
+	}
+	return parsed
+}
+
+func runHealthcheck() int {
+	client := http.Client{Timeout: 2 * time.Second}
+	resp, err := client.Get("http://127.0.0.1:8080/health")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		fmt.Fprintf(os.Stderr, "healthcheck status %d\n", resp.StatusCode)
+		return 1
+	}
+	return 0
+}
+
+func main() {
+	healthcheck := flag.Bool("healthcheck", false, "check local HTTP health endpoint")
+	flag.Parse()
+	if *healthcheck {
+		os.Exit(runHealthcheck())
+	}
+
+	bind := firstNonEmpty(os.Getenv("AEGIS_BIND"), os.Getenv("CYBERFORGE_BIND"), ":8080")
+	eventBuffer := envInt("AEGIS_EVENT_BUFFER", envInt("CYBERFORGE_EVENT_BUFFER", 10000))
+	orchestrator := NewOrchestrator(eventBuffer)
+	orchestrator.RegisterModule("local_agent", "0.1.0")
+	orchestrator.RegisterModule("ot_monitor", "0.1.0")
+	orchestrator.RegisterModule("wazuh", "external")
+	orchestrator.RegisterModule("suricata", "external")
+	orchestrator.RegisterModule("crowdsec", "external")
+	orchestrator.RegisterModule("cybershield_ai", "0.3.0")
+	orchestrator.RegisterModule("network_analyzer", "0.1.0")
+	orchestrator.RegisterModule("threat_intel", "0.1.0")
+	orchestrator.RegisterModule("vuln_scanner", "0.1.0")
+	orchestrator.RegisterModule("siem_correlator", "0.1.0")
+	orchestrator.RegisterModule("soar", "0.1.0")
+
+	server := &http.Server{
+		Addr:              bind,
+		Handler:           orchestrator.Routes(),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
+	go func() {
+		log.Printf("Cybersecurity-AEGIS orchestrator listening on %s", bind)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("server failed: %v", err)
+		}
+	}()
+
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	<-signals
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("shutdown error: %v", err)
+	}
+}

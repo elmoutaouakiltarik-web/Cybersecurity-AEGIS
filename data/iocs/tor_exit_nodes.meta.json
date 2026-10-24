@@ -1,0 +1,11 @@
+{
+  "feed_id": "tor_exit_nodes",
+  "name": "Tor exit node list",
+  "kind": "ip",
+  "url": "https://check.torproject.org/torbulkexitlist",
+  "fetched_at": "2026-10-20T01:38:06.848691+00:00",
+  "size_bytes": 17127,
+  "rows": 1208,
+  "description": "Current Tor exit relay IPs. Anonymising network \u2014 investigate inbound from these.",
+  "license": "free"
+}

@@ -1,0 +1,250 @@
+1:// ========================= CONFIG =========================
+3:function apiUrl(path) {
+25:// ========================= AUTH =========================
+26:function getHeaders() {
+33:async function apiGet(path) {
+42:async function apiPost(path, body) {
+51:async function apiPatch(path, body) {
+61:function setConnBanner(online, msg) {
+74:async function probeBackend() {
+94:function probeBackendSoon() {
+98:function startBackendProbeLoop() {
+103:function showLoginOverlay() {
+110:function hideLoginOverlay() {
+117:function doLogout() {
+167:// ========================= ROUTING =========================
+171:function resolveRouteFromHash() {
+175:function navTo(target, fromHash = false) {
+212:// ========================= THEME =========================
+213:function toggleTheme() {
+224:// ========================= MOBILE =========================
+225:function toggleMobileMenu() { document.getElementById('mobileMenu').classList.toggle('active'); }
+227:// ========================= REFRESH =========================
+228:function toggleAutoRefresh() {
+232:function updateLastRefresh() {
+239:// ========================= TOASTS =========================
+240:function showToast(title, body, type='info', persist=false) {
+251:// ========================= EVENT DETAIL MODAL =========================
+252:function openEventModal(ev) {
+285:function closeEventModal() { document.getElementById('eventModal').classList.remove('active'); currentModalEvent = null; }
+286:function toggleRawJson() {
+290:function copyModalJSON() {
+295:async function resolveModalEvent() {
+300:function escalateModalEvent() {
+304:// ========================= GLOBAL SEARCH =========================
+307:function onSearchInput() {
+311:async function performSearch() {
+344:// ========================= OVERVIEW =========================
+346:function initCharts() {
+382:async function loadOverview() {
+432:async function refreshEvents() {
+467:function openEventModalById(id) {
+472:// ========================= MITRE MATRIX =========================
+485:function renderMITREMatrix() {
+509:// ========================= NETWORK =========================
+510:async function loadNetwork() {
+526:async function triggerNetworkSim() { await apiPost(PROXY+'/network/trigger', {}); loadNetwork(); }
+528:// ── LAN SCAN ────────────────────────────────────────────────────────────────
+533:async function initScanSubnets() {
+548:async function launchLANScan() {
+577:async function pollScanStatus(jobId) {
+594:async function loadScanResults(jobId) {
+650:function toggleScanDetail(ip) {
+656:async function exportScan(fmt) {
+673:async function launchVulnBatchFromScan() {
+680:// ========================= OT =========================
+681:async function loadOT() {
+725:async function refreshOT() { loadOT(); }
+727:// ========================= SIEM =========================
+728:async function loadSIEM() {
+744:async function triggerSIEMDemo() {
+751:async function loadSIEMRules() {
+772:// ========================= SOAR =========================
+773:async function loadSOAR() {
+798:async function triggerPlaybookManual() {
+807:// ========================= SHIELD ENGINE =========================
+810:async function loadShield() {
+834:function shieldScoreColor(score) {
+841:function renderShieldFindings(findings) {
+866:function renderShieldActions(actions) {
+880:function renderShieldEntities(entities) {
+893:function renderShieldHunts(hunts) {
+907:function renderShieldRules(rules) {
+917:async function exportShieldRules() {
+929:function copyText(text) {
+935:// ========================= ENDPOINT PROTECTION =========================
+938:function _epSeverityBadge(sev) {
+942:function _epStatusIcon(status) {
+949:function renderFindings(findings) {
+971:async function showRemediationFromKey(key) {
+1212:async function loadEndpoint() {
+1263:async function runHardeningAudit(includeUpdates = false) {
+1290:async function loadEndpointCheck(name, targetId) {
+1364:async function loadEndpointIntegrations() {
+1402:async function scanClamav() {
+1439:async function loadEndpointInfo() {
+1459:async function loadProcesses() {
+1488:async function loadConnections() {
+1525:async function scanUploadedFile() {
+1566:async function scanSecretsDir() {
+1609:async function loadDefenseIntegrations() {
+1648:async function loadRoadmapToolCount() {
+1663:async function scanClamAvPath() {
+1698:// ========================= SECURITY POSTURE =========================
+1699:async function loadPosture() {
+1748:// ========================= THREAT HUNT v2 =========================
+1749:async function loadHuntCatalog() {
+1772:async function runOneHunt(qid) {
+1788:async function runAllHunts() {
+1807:function renderHuntResults(target, d) {
+1835:// ========================= REALTIME =========================
+1836:async function loadRealtimeStatus() {
+1857:async function startRealtime() {
+1862:async function stopRealtime() {
+1868:// ========================= LIVE IOC =========================
+1869:async function loadIOCStatus() {
+1895:async function refreshIOCFeeds() {
+1911:async function iocLookup() {
+1937:// ========================= CONTAINMENT =========================
+1938:async function _containCall(path, payload, resultId) {
+1958:function containBlockIP() {
+1969:function containUnblockIP() {
+1975:function containKillPid() {
+1980:function containQuarantine() {
+1985:function containDisableAcc() {
+1990:function containEnableAcc() {
+1995:function containIsolate() {
+2000:function containUnisolate() {
+2003:async function loadContainmentLog() {
+2023:// ========================= REMEDIATION =========================
+2026:async function fetchRemediation(params) {
+2034:function renderRemediationCard(rem, header) {
+2054:async function showRemediationModal(opts, title) {
+2070:function showModal(title, htmlBody) {
+2090:function closeRemediationModal() {
+2095:// ========================= THREAT INTEL =========================
+2096:async function loadTI() {
+2107:async function tiLookup() {
+2153:// ========================= MAP =========================
+2154:function initThreatMap() {
+2161:async function updateThreatMap() {
+2183:// ========================= VULN =========================
+2184:async function loadVuln() {
+2216:async function triggerVulnScan() {
+2222:async function triggerVulnScanTarget() {
+2235:async function searchCVE() {
+2254:// ========================= ML =========================
+2256:async function loadML() {
+2306:async function mlPredict() {
+2321:// ========================= LOGIN =========================
+2322:async function doLogin(localMode = false) {
+2398:function saveApiKey() {
+2410:function clearApiKey() {
+2421:// ========================= SETTINGS =========================
+2422:async function loadSettings() {
+2450:function saveNotifSettings() {
+2466:async function testNotification() {
+2497:async function loadModuleHealth() {
+2571:function exportEvents() { window.open(API+'/events/export?limit=0', '_blank'); }
+2572:function exportEventsCSV() { window.open(API+'/events/export/csv', '_blank'); }
+2574:// ========================= BULK ACTIONS =========================
+2575:function toggleSelectEvent(id, checked) {
+2580:function updateBulkBar() {
+2585:function clearBulkSelection() {
+2589:async function bulkResolve() {
+2594:function bulkExportJSON() {
+2603:// ========================= CLOCK & REFRESH =========================
+2604:function updateClock() {
+2609:// ========================= MITRE ATT&CK =========================
+2656:async function loadMitre() {
+2709:function renderTacticCol(tactic, detectedTechs, techHits, isICS=false) {
+2719:function showTechDetail(techId, techName, hitCount) {
+2740:// ========================= THREAT HUNT =========================
+2743:function quickHunt(query) {
+2748:async function runHunt() {
+2835:function clearHunt() {
+2843:function exportHuntJSON() {
+2850:function exportHuntCSV() {
+2860:// ========================= DFIR =========================
+2881:async function loadDFIR() {
+2925:function renderDFIRTimeline() {
+2957:function renderDFIREvidence() {
+2975:function addEvidenceItem() {
+2988:function removeEvidence(idx) {
+2995:function renderDFIRChecklist() {
+3011:function updateDFIRProgress() {
+3023:function resetDFIRChecklist() { dfirChecklistState = {}; renderDFIRChecklist(); }
+3025:function renderChainOfCustody() {
+3033:function exportDFIRTimeline() {
+3045:// ========================= ASSET INVENTORY =========================
+3048:async function loadAssets() {
+3087:function filterAssets() {
+3098:function renderAssetTable(assets) {
+3114:function renderAssetSubnetMap() {
+3139:// ========================= HONEYPOT / DECEPTION =========================
+3150:async function loadHoneypot() {
+3225:// ========================= REPORTS =========================
+3236:// ========================= REPORTS =========================
+3237:async function loadReports() {
+3251:async function loadReportList() {
+3279:async function downloadReport(format) {
+3302:async function previewReport() {
+3313:async function runFullPipelineReport() {
+3343:function renderReportHistory() {} // legacy stub — loadReportList replaces this
+3345:async function generateReport(type) {
+3363:function _buildReportHTML(type, tmpl, events, metrics, rangeVal) {
+3420:function renderReportHistory() {
+3428:// ========================= COMPLIANCE =========================
+3429:function loadCompliance() {
+3481:// ========================= KPI / METRICS =========================
+3483:async function loadKPI() {
+3580:async function refreshAll() {
+3613:// ========================= AUDIT LOG =========================
+3615:async function loadAuditLog() {
+3624:function renderAuditLog() {
+3658:// ========================= SSE =========================
+3659:function startSSE() {
+3681:// ========================= SESSION TIMEOUT =========================
+3682:function resetSessionTimer() {
+3697:function stayLoggedIn() {
+3702:// ════════════════════════════════════════════ TOPOLOGY ════
+3706:function _loadD3(cb) {
+3715:async function loadTopology() {
+3742:function _renderTopologyGraph(data) {
+3829:function _showTopoTooltip(event, d) {
+3848:function _hideTopoTooltip() { if (_topoTooltip) _topoTooltip.style.display = 'none'; }
+3850:async function loadAttackPaths() {
+3889:// ════════════════════════════════════════════ TLS INSPECTOR ════
+3892:function tlsSingleInspect() {
+3897:async function doTLSInspect() {
+3916:async function tlsScanFromResults() {
+3933:function _renderTLSTable(results) {
+3978:function _showTLSDetail(idx) {
+4025:// ════════════════════════════════════════════ THREAT CAMPAIGNS ════
+4028:async function loadCampaigns(live) {
+4049:function _renderCampaigns(campaigns) {
+4081:function _renderCampaignCard(c, idx) {
+4140:// ========================= UTILS =========================
+4141:function esc(str) {
+4146:// ========================= INTEGRATIONS =========================
+4147:async function loadIntegrations() {
+4173:// ========================= SIGMA =========================
+4174:async function loadSigma() {
+4197:// ========================= OT PROTOCOLS =========================
+4198:async function loadOTProtocols() {
+4215:async function runModbusRead() {
+4232:async function runOpcuaBrowse() {
+4244:// ========================= EVIDENCE =========================
+4245:async function loadEvidence() {
+4266:async function verifyEvidence() {
+4275:// ========================= PKI =========================
+4276:async function loadPKI() {
+4302:async function checkCertExpiry() {
+4311:// ========================= TLS INSPECTOR =========================
+4312:async function loadTLS() {
+4326:// ========================= COMPLIANCE ASSESSMENTS =========================
+4327:async function runComplianceAssessment(framework) {
+4338:async function loadComplianceAssessments() {
+4349:function renderComplianceAssessments(results) {
+4376:// ========================= INIT =========================
+4377:function initApp() {

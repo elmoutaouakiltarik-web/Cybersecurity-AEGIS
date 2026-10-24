@@ -1,0 +1,114 @@
+---
+# Cybersecurity-AEGIS SOAR Playbook: OT Critical Alert — Escalation Advisory
+# PB-OT-002
+id: PB-OT-002
+name: OT Critical Security Alert — Full Escalation Advisory
+description: |
+  Enhanced advisory for critical OT security events requiring immediate
+  human attention. This includes suspected active attacks on ICS, anomalous
+  PLC commands, unauthorized protocol writes, or process manipulation.
+
+  CRITICAL SAFETY PRINCIPLE:
+  This playbook NEVER sends commands to PLCs, RTUs, or any OT devices.
+  All response actions are advisory-only. OT engineers are the ONLY
+  authorized actors for any physical process changes.
+
+  References: IEC 62443, NIST SP 800-82 Rev.3, CISA ICS-CERT advisories.
+version: "2.0"
+dry_run: true
+ot_safe: true
+enabled: true
+
+severity_filter:
+  - critical
+
+category_filter:
+  - industrial
+  - ot
+  - ics
+  - scada
+
+trigger_conditions:
+  - category: [industrial, ot, ics, scada]
+    severity: [critical]
+
+actions:
+  - type: log
+    description: "Audit log: Critical OT security event"
+    params:
+      message: |
+        CRITICAL OT SECURITY EVENT.
+        AEGIS ADVISORY MODE ONLY — no automated OT commands issued.
+        Engage OT engineering team and process safety officer IMMEDIATELY.
+      ot_event: true
+      safety_critical: true
+
+  - type: ot_advisory
+    description: "Emergency advisory to OT operations and safety team"
+    params:
+      message: |
+        CRITICAL OT SECURITY ADVISORY
+
+        An anomalous or unauthorized event has been detected on your
+        industrial control system network.
+
+        RECOMMENDED IMMEDIATE ACTIONS (human decision required):
+        1. Verify current process state via physical HMI indicators
+        2. Alert shift supervisor and process safety officer
+        3. If process anomaly confirmed: activate emergency procedures
+        4. Do NOT use network-connected HMI for safety decisions
+        5. Preserve all logs and network captures for forensics
+
+        AEGIS has NOT made any automated changes to the OT network.
+        All response actions require your authorization.
+      notify_engineer: true
+      notify_soc: true
+      notify_safety_officer: true
+      severity: critical
+
+  - type: send_alert
+    description: "Multi-channel critical OT notification"
+    params:
+      channel: ot_engineering
+      secondary_channel: soc_email
+      tertiary_channel: management
+      priority: critical
+      subject: "CRITICAL OT ADVISORY: {{title}} — {{asset_id}}"
+      escalate_to_phone: true
+      note: "ADVISORY ONLY — No automated OT actions taken by AEGIS"
+
+  - type: tag_event
+    description: "Tag critical OT event for full audit trail"
+    params:
+      tags:
+        - ot_critical
+        - advisory_only
+        - human_required
+        - safety_review
+        - iec62443
+        - nist_800_82
+
+  - type: create_ticket
+    description: "Critical OT incident ticket — full investigation"
+    params:
+      severity: critical
+      team: ot_engineering
+      secondary_team: security
+      title: "CRITICAL OT INCIDENT: {{title}} — Asset {{asset_id}}"
+      priority: P1
+      tags:
+        - ot_critical
+        - p1_incident
+        - advisory_only
+        - process_safety
+      safety_note: >
+        REMINDER: This ticket is for ADVISORY tracking only.
+        No automated OT actions have been taken.
+        All physical process decisions remain with OT engineering.
+      investigation_steps:
+        - "Verify physical process status via local HMI/panel"
+        - "Identify source of unauthorized traffic: {{source_ip}}"
+        - "Isolate affected network segment IF process is SAFE to do so"
+        - "Preserve: Modbus/DNP3 packet captures, PLC logs, HMI historian"
+        - "Root cause: maintenance window, misconfiguration, or active attack?"
+        - "Engage ICS-CERT/CISA if suspected nation-state attack"

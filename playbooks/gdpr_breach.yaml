@@ -1,0 +1,106 @@
+---
+# Cybersecurity-AEGIS SOAR Playbook: GDPR Data Breach Notification
+# PB-GDPR-001
+id: PB-GDPR-001
+name: GDPR Data Breach Notification Workflow
+description: |
+  Advisory workflow for GDPR Art.33 (DPA notification within 72h) and
+  Art.34 (data subject notification for high-risk breaches).
+  Also covers NIS2 early warning (24h) and incident notification (72h).
+
+  This playbook is ADVISORY ONLY — all notifications require legal review
+  before submission to regulators. No automated external submissions.
+
+  Trigger: Any event involving possible exposure of personal data.
+version: "1.0"
+dry_run: true
+ot_safe: true
+enabled: true
+
+severity_filter:
+  - high
+  - critical
+
+category_filter:
+  - endpoint
+  - network
+  - identity
+  - intelligence
+
+trigger_conditions:
+  - title_contains:
+      - personal data
+      - pii
+      - data breach
+      - exfiltration
+      - database dump
+      - gdpr
+
+actions:
+  - type: log
+    description: "Audit log: Potential GDPR breach event"
+    params:
+      message: |
+        GDPR BREACH ASSESSMENT TRIGGERED.
+        Art.33: DPA must be notified within 72h if breach confirmed.
+        Art.34: Data subjects must be notified if high risk to rights.
+        NIS2: Early warning to CSIRT within 24h for significant incidents.
+        CONTACT DPO IMMEDIATELY.
+
+  - type: tag_event
+    description: "Tag for GDPR assessment"
+    params:
+      tags:
+        - gdpr_assessment
+        - dpo_required
+        - nis2_assessment
+        - legal_review_required
+
+  - type: send_alert
+    description: "Notify DPO and Legal"
+    params:
+      channel: dpo_email
+      priority: urgent
+      subject: "AEGIS: GDPR Breach Assessment Required — {{timestamp}}"
+      body: |
+        A security event requiring GDPR assessment has been detected.
+
+        Event: {{title}}
+        Severity: {{severity}}
+        Source: {{source}}
+        Timestamp: {{timestamp}}
+
+        REQUIRED ACTIONS (72h clock may have started):
+        1. DPO: Assess whether personal data was exposed/accessed
+        2. Legal: Determine GDPR Art.33 notification obligation
+        3. Security: Contain incident and preserve evidence
+        4. Management: Briefing required within 2h
+
+        GDPR Timeline:
+        - T+24h: NIS2 early warning to CSIRT (if significant)
+        - T+72h: GDPR Art.33 DPA notification (if breach confirmed)
+        - ASAP: Art.34 data subject notification (if high risk)
+
+  - type: create_ticket
+    description: "GDPR breach assessment ticket with timeline"
+    params:
+      severity: critical
+      team: legal_dpo
+      title: "GDPR Breach Assessment: {{title}}"
+      priority: P1
+      tags:
+        - gdpr
+        - dpa_notification
+        - nis2
+        - legal
+        - 72h_clock
+      deadlines:
+        nis2_early_warning: "+24h"
+        gdpr_dpa_notification: "+72h"
+        internal_report: "+4h"
+
+  - type: update_status
+    description: "Mark for compliance tracking"
+    params:
+      status: compliance_review
+      priority: critical

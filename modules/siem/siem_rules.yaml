@@ -1,0 +1,305 @@
+# Cybersecurity-AEGIS — SIEM Correlation Rules (Sigma-inspired)
+# Loaded automatically by the SIEM correlator at startup.
+# Add new rules under the `rules:` key; the engine reloads on restart.
+# Format: match_fields.title_contains uses substring match on event.title (case-insensitive).
+# match_fields.source_any matches event.source exactly.
+# mitre_technique_id follows ATT&CK Enterprise (Txxxx) or ICS (T0xxx) nomenclature.
+
+rules:
+
+  # ── OT / ICS ──────────────────────────────────────────────────────────────────
+
+  - id: AEGIS-EXT-001
+    name: OT Modbus Unauthorized Write Attempt
+    description: >
+      Detects Modbus write function codes (FC 5/6/15/16) originating from
+      unauthorized sources. Correlates with MITRE ICS T0855 (Unauthorized
+      Command Message) and T0831 (Manipulation of Control).
+      Adapted from blueprint Sigma rule: id 5a3f0f6c-ot-modbus-write.
+    severity: critical
+    category: industrial
+    window_sec: 120
+    threshold: 1
+    match_fields:
+      title_contains:
+        - "modbus write"
+        - "unauthorized modbus"
+        - "modbus coil"
+        - "modbus register write"
+        - "fc 5"
+        - "fc 6"
+        - "fc 15"
+        - "fc 16"
+        - "function code 5"
+        - "function code 6"
+    group_by:
+      - source_ip
+    mitre_technique_id: T0855
+    mitre_technique_name: Unauthorized Command Message
+    tags:
+      - attack.ics
+      - attack.execution
+      - attack.ics.modify_program
+      - ot_critical
+    enabled: true
+
+  - id: AEGIS-EXT-002
+    name: DNP3 Unsolicited Response / Unauthorized RTU
+    description: >
+      Detects unsolicited DNP3 responses from unknown RTUs or unusual DNP3
+      traffic patterns that may indicate rogue device injection or spoofing.
+      Maps to MITRE ICS T0846 (Remote System Discovery) and T0824 (Spoof
+      Reporting Message).
+    severity: high
+    category: industrial
+    window_sec: 180
+    threshold: 2
+    match_fields:
+      title_contains:
+        - "dnp3"
+        - "unsolicited response"
+        - "unauthorized rtu"
+        - "dnp3 anomaly"
+        - "unauthorized dnp"
+    group_by:
+      - source_ip
+    mitre_technique_id: T0846
+    mitre_technique_name: Remote System Discovery
+    tags:
+      - attack.ics
+      - attack.discovery
+      - dnp3
+    enabled: true
+
+  - id: AEGIS-EXT-003
+    name: OPC UA Excessive Tag Reads — Possible Recon
+    description: >
+      High-frequency OPC UA tag reads may indicate industrial network
+      reconnaissance or preparation for targeted manipulation.
+      Maps to MITRE ICS T0840 (Network Connection Enumeration).
+    severity: medium
+    category: industrial
+    window_sec: 300
+    threshold: 3
+    match_fields:
+      title_contains:
+        - "opc ua"
+        - "excessive tag"
+        - "opc recon"
+        - "tag read"
+        - "opc browse"
+    group_by:
+      - source_ip
+    mitre_technique_id: T0840
+    mitre_technique_name: Network Connection Enumeration
+    tags:
+      - attack.ics
+      - attack.discovery
+      - opcua
+    enabled: true
+
+  - id: AEGIS-EXT-004
+    name: IEC 61850 GOOSE Spoofing / Injection
+    description: >
+      Detects anomalous IEC 61850 GOOSE messages that may indicate
+      injection attacks on substation protection systems.
+      Maps to MITRE ICS T0856 (Spoof Reporting Message).
+    severity: critical
+    category: industrial
+    window_sec: 60
+    threshold: 1
+    match_fields:
+      title_contains:
+        - "goose"
+        - "iec 61850"
+        - "iec61850"
+        - "sampled values"
+        - "substation spoofing"
+    group_by:
+      - source_ip
+    mitre_technique_id: T0856
+    mitre_technique_name: Spoof Reporting Message
+    tags:
+      - attack.ics
+      - attack.impact
+      - iec61850
+      - substation
+    enabled: true
+
+  - id: AEGIS-EXT-005
+    name: OT Unauthorized Asset / Rogue Device
+    description: >
+      A device not in the authorized asset inventory is communicating on the
+      OT network. This may indicate a rogue PLC, HMI, or adversary implant.
+      Maps to MITRE ICS T0845 (Program Upload).
+    severity: high
+    category: industrial
+    window_sec: 300
+    threshold: 1
+    match_fields:
+      title_contains:
+        - "unauthorized asset"
+        - "rogue device"
+        - "unknown device"
+        - "unrecognized ot"
+        - "unauthorized ot"
+        - "not in inventory"
+    group_by:
+      - all
+    mitre_technique_id: T0845
+    mitre_technique_name: Program Upload
+    tags:
+      - attack.ics
+      - attack.persistence
+      - asset_management
+    enabled: true
+
+  # ── IT THREATS ────────────────────────────────────────────────────────────────
+
+  - id: AEGIS-EXT-006
+    name: Ransomware Behavioral Indicator Chain
+    description: >
+      Multiple indicators of ransomware activity: file encryption warnings,
+      shadow copy deletion, or mass rename events in a short window.
+      Maps to MITRE T1486 (Data Encrypted for Impact).
+    severity: critical
+    category: endpoint
+    window_sec: 120
+    threshold: 2
+    match_fields:
+      title_contains:
+        - "ransom"
+        - "vssadmin delete"
+        - "wbadmin delete"
+        - "shadow copy"
+        - "file encryption"
+        - "encrypted files"
+        - "readme.txt"
+        - "decrypt instructions"
+    group_by:
+      - source_ip
+    mitre_technique_id: T1486
+    mitre_technique_name: Data Encrypted for Impact
+    tags:
+      - ransomware
+      - impact
+      - defense_evasion
+    enabled: true
+
+  - id: AEGIS-EXT-007
+    name: Credential Dump / LSASS Access
+    description: >
+      Detects LSASS access, Mimikatz-style events, or credential harvesting
+      activity. High-fidelity indicator of post-exploitation activity.
+      Maps to MITRE T1003 (OS Credential Dumping).
+    severity: critical
+    category: endpoint
+    window_sec: 180
+    threshold: 1
+    match_fields:
+      title_contains:
+        - "lsass"
+        - "mimikatz"
+        - "credential dump"
+        - "sekurlsa"
+        - "ntds.dit"
+        - "sam dump"
+        - "hash dump"
+        - "pass the hash"
+        - "pass-the-hash"
+    group_by:
+      - hostname
+    mitre_technique_id: T1003
+    mitre_technique_name: OS Credential Dumping
+    tags:
+      - credential_access
+      - post_exploitation
+      - high_fidelity
+    enabled: true
+
+  - id: AEGIS-EXT-008
+    name: C2 Communication — DNS Tunneling / Beaconing
+    description: >
+      Correlates DNS anomaly alerts with network beaconing indicators.
+      Periodic outbound connections to unusual domains may indicate
+      command-and-control channel. Maps to MITRE T1071 (Application Layer Protocol).
+    severity: high
+    category: network
+    window_sec: 300
+    threshold: 3
+    match_fields:
+      title_contains:
+        - "dns tunnel"
+        - "dns c2"
+        - "dns query"
+        - "c2 beacon"
+        - "beaconing"
+        - "periodic outbound"
+        - "c2 dns"
+        - "suspicious outbound"
+    group_by:
+      - source_ip
+    mitre_technique_id: T1071
+    mitre_technique_name: Application Layer Protocol
+    tags:
+      - c2
+      - exfiltration
+      - dns_tunnel
+    enabled: true
+
+  - id: AEGIS-EXT-009
+    name: Living-off-the-Land (LOLBin) Execution
+    description: >
+      Detects abuse of legitimate Windows binaries for malicious purposes:
+      wscript, cscript, mshta, certutil, powershell encoded commands.
+      Maps to MITRE T1218 (System Binary Proxy Execution).
+    severity: high
+    category: endpoint
+    window_sec: 180
+    threshold: 2
+    match_fields:
+      title_contains:
+        - "certutil"
+        - "mshta"
+        - "wscript"
+        - "cscript"
+        - "regsvr32"
+        - "rundll32"
+        - "lolbin"
+        - "encoded command"
+        - "base64 command"
+    group_by:
+      - hostname
+    mitre_technique_id: T1218
+    mitre_technique_name: System Binary Proxy Execution
+    tags:
+      - defense_evasion
+      - execution
+      - lolbin
+    enabled: true
+
+  - id: AEGIS-EXT-010
+    name: OT + IT Cross-Domain Attack — Pivot Detected
+    description: >
+      An attacker is active on both IT and OT networks in a short window,
+      suggesting a cross-domain pivot from corporate to industrial network.
+      This is the highest-risk attack pattern. Maps to MITRE ICS T0886
+      (Remote Services) and T0822 (External Remote Services).
+    severity: critical
+    category: industrial
+    window_sec: 900
+    threshold: 2
+    match_fields:
+      multi_source_category:
+        - industrial
+        - network
+    group_by:
+      - all
+    mitre_technique_id: T0886
+    mitre_technique_name: Remote Services
+    tags:
+      - ot_it_pivot
+      - cross_domain
+      - attack_chain
+      - critical_infrastructure
+    enabled: true

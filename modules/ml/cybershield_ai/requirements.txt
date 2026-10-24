@@ -1,0 +1,10 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+pandas==2.2.3
+numpy==2.2.5
+scikit-learn==1.6.1
+joblib==1.4.2
+pydantic==2.11.4
+streamlit==1.45.1
+PyYAML==6.0.2
+pytest==8.3.5

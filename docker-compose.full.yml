@@ -1,0 +1,372 @@
+name: aegis-omni
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Cybersecurity-AEGIS / AEGIS-OMNI — Full Stack
+# ───────────────────────────────────────────────────────────────────────────────
+# Launches the Go orchestrator + all Python modules + Postgres in one command:
+#   docker compose -f docker-compose.full.yml up -d --build
+#
+# Then open http://localhost:8080/dashboard/  and login with:
+#   user:    admin
+#   pass:    value of AEGIS_ADMIN_PASSWORD (set in .env)
+#
+# Optional profiles:
+#   --profile industrial   adds the OT/ICS monitor (modbus/dnp3/opcua)
+#   --profile infra        adds Redis + Suricata + Zeek + syslog
+# ═══════════════════════════════════════════════════════════════════════════════
+
+x-common-env: &common-env
+  AEGIS_LOG_LEVEL: ${AEGIS_LOG_LEVEL:-INFO}
+  ORCHESTRATOR_URL: http://orchestrator:8080
+  TZ: ${TZ:-Europe/Rome}
+
+services:
+  # -- Industrial site assessment ------------------------------------------
+  # API + report. Per la cattura live serve un'interfaccia in mirror: in
+  # container si usa l'upload di un pcap, oppure si esegue in nativo.
+  site-assessment:
+    profiles: ["industrial", "full"]
+    build:
+      context: ./modules/industrial/site_assessment
+    container_name: aegis-site-assessment
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      ASSESS_API_PORT: "8097"
+      ASSESS_BIND_HOST: "0.0.0.0"
+      AEGIS_ASSESS_DATA_DIR: "/data"
+    ports:
+      - "127.0.0.1:8097:8097"
+    volumes:
+      - site-assess-data:/data
+    networks:
+      - aegis-net
+
+  # -- Persistence -------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: aegis-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aegis
+      POSTGRES_PASSWORD: aegis
+      POSTGRES_DB: aegis
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aegis"]
+      interval: 10s
+      timeout: 4s
+      retries: 6
+    networks:
+      - aegis-net
+
+  redis:
+    profiles: ["infra"]
+    image: redis:7-alpine
+    container_name: aegis-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - aegis-net
+
+  # ── Orchestrator (Go) ──────────────────────────────────────────────────────
+  orchestrator:
+    build:
+      context: ./core/orchestrator
+      dockerfile: Dockerfile
+    container_name: aegis-orchestrator
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      AEGIS_BIND_ADDR: 0.0.0.0:8080
+      AEGIS_EVENT_STORE: /data/events.jsonl
+      AEGIS_DB_CONN: "postgres://aegis:aegis@postgres:5432/aegis?sslmode=disable"
+      # Admin credentials (override these in .env or shell before `up`).
+      AEGIS_ADMIN_USER: ${AEGIS_ADMIN_USER:-admin}
+      AEGIS_ADMIN_PASSWORD: ${AEGIS_ADMIN_PASSWORD:?set AEGIS_ADMIN_PASSWORD in .env}
+      # Force session-based auth on the dashboard. Modules talk via the
+      # public /api/v1/ingest/* path (see auth.go).
+      AEGIS_AUTH_REQUIRED: "true"
+      # Optional: a Bearer token alternative to the login form.
+      AEGIS_API_KEY: ${AEGIS_API_KEY:-}
+      # Where to find each module on the internal Docker network.
+      AEGIS_PROXY_NETWORK:      http://network:8081
+      AEGIS_PROXY_SIEM:         http://siem:8082
+      AEGIS_PROXY_SOAR:         http://soar:8083
+      AEGIS_PROXY_THREAT_INTEL: http://threat-intel:8084
+      AEGIS_PROXY_VULN:         http://vuln:8085
+      AEGIS_PROXY_REPORTS:      http://reports:8086
+      AEGIS_PROXY_OT:           http://ot-monitor:8087
+      AEGIS_PROXY_SITE_ASSESSMENT: http://site-assessment:8097
+      # Endpoint module is NATIVE on the host (PowerShell access) — reach it
+      # via the docker bridge gateway alias.
+      AEGIS_PROXY_ENDPOINT:     http://host.docker.internal:8088
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${AEGIS_BIND_HOST:-127.0.0.1}:8080:8080"
+    volumes:
+      - events-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 15s
+      timeout: 4s
+      retries: 4
+      start_period: 10s
+    networks:
+      - aegis-net
+
+  # ── Network analyzer (LAN scan, TLS, topology, fusion) ─────────────────────
+  network:
+    build:
+      context: ./modules/network
+      dockerfile: Dockerfile
+    container_name: aegis-network
+    restart: unless-stopped
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      NETWORK_API_PORT: "8081"
+      SCAN_MAX_HOSTS: "256"
+      SCAN_MAX_CONCURRENT: "3"
+      SCAN_ALLOW_PUBLIC: "false"
+    ports:
+      - "127.0.0.1:8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request,sys; urllib.request.urlopen(\"http://127.0.0.1:8081/health\",timeout=3).read()'"]
+      interval: 20s
+      timeout: 5s
+      retries: 4
+    networks:
+      - aegis-net
+
+  # ── SIEM correlator ────────────────────────────────────────────────────────
+  siem:
+    build:
+      context: ./modules/siem
+      dockerfile: Dockerfile
+    container_name: aegis-siem
+    restart: unless-stopped
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      SIEM_API_PORT: "8082"
+      SIEM_RULES_FILE: /app/siem_rules.yaml
+      SIEM_DEDUP_COOLDOWN: "300"
+    ports:
+      - "127.0.0.1:8082:8082"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8082/health\",timeout=3).read()'"]
+      interval: 20s
+      timeout: 5s
+      retries: 4
+    networks:
+      - aegis-net
+
+  # ── SOAR playbook executor ─────────────────────────────────────────────────
+  soar:
+    build:
+      context: ./modules/soar
+      dockerfile: Dockerfile
+    container_name: aegis-soar
+    restart: unless-stopped
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      SOAR_API_PORT: "8083"
+      SOAR_PLAYBOOKS_DIR: /playbooks
+      SOAR_LIVE_MODE: "false"
+    ports:
+      - "127.0.0.1:8083:8083"
+    volumes:
+      # Mount the global playbooks directory read-only so the executor can
+      # discover all YAML files without rebuilding the image.
+      - ./playbooks:/playbooks:ro
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8083/health\",timeout=3).read()'"]
+      interval: 20s
+      timeout: 5s
+      retries: 4
+    networks:
+      - aegis-net
+
+  # ── Threat Intel (feeds + IOC lookup) ──────────────────────────────────────
+  threat-intel:
+    build:
+      context: ./modules/threat_intel
+      dockerfile: Dockerfile
+    container_name: aegis-threat-intel
+    restart: unless-stopped
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      THREAT_INTEL_API_PORT: "8084"
+      THREAT_INTEL_FEEDS_DIR: /app/feeds
+    ports:
+      - "127.0.0.1:8084:8084"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8084/health\",timeout=3).read()'"]
+      interval: 20s
+      timeout: 5s
+      retries: 4
+    networks:
+      - aegis-net
+
+  # ── Vulnerability scanner (CVE/CVSS) ───────────────────────────────────────
+  vuln:
+    build:
+      context: ./modules/vuln
+      dockerfile: Dockerfile
+    container_name: aegis-vuln
+    restart: unless-stopped
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      VULN_API_PORT: "8085"
+      VULN_ACTIVE_SCAN: "false"
+      # NVD_API_KEY:   set to enable live NVD lookups
+    ports:
+      - "127.0.0.1:8085:8085"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8085/health\",timeout=3).read()'"]
+      interval: 20s
+      timeout: 5s
+      retries: 4
+    networks:
+      - aegis-net
+
+  # ── Reports (HTML / JSON exec summaries) ───────────────────────────────────
+  reports:
+    build:
+      context: ./modules/reports
+      dockerfile: Dockerfile
+    container_name: aegis-reports
+    restart: unless-stopped
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      REPORTS_API_PORT: "8086"
+      REPORTS_DIR: /reports
+    ports:
+      - "127.0.0.1:8086:8086"
+    volumes:
+      - reports-data:/reports
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8086/health\",timeout=3).read()'"]
+      interval: 20s
+      timeout: 5s
+      retries: 4
+    networks:
+      - aegis-net
+
+  # ── OT/ICS monitor (Modbus / DNP3 / OPC UA / BACnet) ───────────────────────
+  ot-monitor:
+    profiles: ["industrial"]
+    build:
+      context: ./modules/industrial/ot_monitor
+      dockerfile: Dockerfile
+    container_name: aegis-ot-monitor
+    restart: unless-stopped
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      OT_API_PORT: "8087"
+      # Default real-mode (no simulation). Set to "true" only when no OT
+      # devices are reachable and you want sample telemetry for testing.
+      OT_MONITOR_SIMULATE: "${OT_MONITOR_SIMULATE:-false}"
+      OT_BASELINE_DAYS: "7"
+      OT_ALERT_THRESHOLD: "3.0"
+    ports:
+      - "127.0.0.1:8087:8087"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8087/health\",timeout=3).read()'"]
+      interval: 20s
+      timeout: 5s
+      retries: 4
+    networks:
+      - aegis-net
+
+  # ── (optional) Suricata IDS in passive mode ────────────────────────────────
+  suricata:
+    profiles: ["infra"]
+    image: jasonish/suricata:latest
+    container_name: aegis-suricata
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      <<: *common-env
+      SURICATA_INTERFACE: "${SURICATA_INTERFACE:-eth0}"
+    volumes:
+      - ./config/suricata/rules:/etc/suricata/rules:ro
+      - suricata-logs:/var/log/suricata
+    command: ["-i", "${SURICATA_INTERFACE:-eth0}", "--set", "outputs.1.eve-log.enabled=yes"]
+
+  # CyberShield AI ML/IDS (real NSL-KDD models)
+  cybershield-ai:
+    build:
+      context: ./modules/ml/cybershield_ai
+      dockerfile: Dockerfile
+    container_name: aegis-cybershield-ai
+    restart: unless-stopped
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      CYBERSHIELD_AI_PORT: "8919"
+      CYBERSHIELD_BINARY_MODEL: "models/cybershield_realpro_binary_ensemble_v0_3.joblib"
+      CYBERSHIELD_FAMILY_MODEL: "models/cybershield_realpro_attack_family_v0_3.joblib"
+      CYBERSHIELD_ANOMALY_MODEL: "models/cybershield_realpro_anomaly_baseline_v0_3.joblib"
+    ports:
+      - "127.0.0.1:8919:8919"
+    volumes:
+      - cybershield-models:/app/models:ro
+      - cybershield-reports:/app/reports
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8919/health',timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - aegis-net
+
+volumes:
+  site-assess-data:
+  cybershield-models:
+  cybershield-reports:
+  postgres-data:
+  redis-data:
+  events-data:
+  reports-data:
+  suricata-logs:
+
+networks:
+  aegis-net:
+    name: aegis-net
+    driver: bridge

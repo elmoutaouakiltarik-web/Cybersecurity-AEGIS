@@ -1,0 +1,11 @@
+{
+  "feed_id": "abuse_feodo",
+  "name": "Abuse.ch Feodo Tracker C2",
+  "kind": "ip",
+  "url": "https://feodotracker.abuse.ch/downloads/ipblocklist.txt",
+  "fetched_at": "2026-10-20T01:38:06.246532+00:00",
+  "size_bytes": 565,
+  "rows": 14,
+  "description": "Active C2 IPs for Emotet, Dridex, Heodo, TrickBot, QakBot.",
+  "license": "free"
+}

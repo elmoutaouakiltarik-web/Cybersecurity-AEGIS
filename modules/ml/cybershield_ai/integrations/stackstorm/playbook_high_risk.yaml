@@ -1,0 +1,29 @@
+---
+name: cybershield_high_risk_triage
+pack: cybershield
+runner_type: orquesta
+description: Defensive triage workflow for high-risk CyberShield AI alerts.
+parameters:
+  asset:
+    type: string
+  risk_score:
+    type: number
+  ot_ics:
+    type: boolean
+    default: false
+tasks:
+  decide:
+    action: core.noop
+    next:
+      - when: <% ctx().ot_ics = true %>
+        do: notify_ot_engineer
+      - when: <% ctx().ot_ics = false %>
+        do: create_soc_ticket
+  notify_ot_engineer:
+    action: core.echo
+    input:
+      message: "OT/ICS alert for <% ctx().asset %>. Human approval required."
+  create_soc_ticket:
+    action: core.echo
+    input:
+      message: "Create SOC ticket for <% ctx().asset %> risk <% ctx().risk_score %>."

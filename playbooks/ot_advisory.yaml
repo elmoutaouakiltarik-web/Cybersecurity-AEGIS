@@ -1,0 +1,71 @@
+---
+# Cybersecurity-AEGIS SOAR Playbook: OT Advisory
+# PB-OT-001
+id: PB-OT-001
+name: OT/ICS Security Advisory
+description: |
+  Read-only advisory workflow for all OT/ICS security events.
+  NEVER takes automated containment actions on OT assets.
+  All actions are notifications, logging, and ticket creation only.
+  OT engineers receive direct notification and must respond manually.
+version: "1.0"
+dry_run: true
+ot_safe: true
+enabled: true
+
+category_filter:
+  - industrial
+  - ot
+  - ics
+  - scada
+
+trigger_conditions:
+  - category: [industrial, ot, ics, scada]
+
+actions:
+  - type: log
+    description: "Audit log: OT security event"
+    params:
+      message: "OT/ICS security advisory triggered. Human review required."
+      ot_event: true
+
+  - type: ot_advisory
+    description: "Send read-only advisory to OT engineering team"
+    params:
+      message: |
+        AEGIS OT Security Advisory:
+        An anomalous event was detected on OT infrastructure.
+        This is an ADVISORY ONLY — no automated changes have been made.
+        OT Engineer: please review and take appropriate manual action.
+      notify_engineer: true
+      notify_soc: true
+      severity: "{{severity}}"
+      asset: "{{destination_ip}}"
+
+  - type: send_alert
+    description: "Alert OT team and SOC"
+    params:
+      channel: ot_engineering
+      priority: urgent
+      subject: "AEGIS OT Advisory: {{title}}"
+      note: "No automated action taken — manual investigation required"
+
+  - type: create_ticket
+    description: "Open OT incident ticket for engineering team"
+    params:
+      severity: "{{severity}}"
+      team: ot_engineering
+      title: "OT Advisory: {{title}}"
+      priority: urgent
+      tags:
+        - ot
+        - advisory_only
+        - no_auto_action
+
+  - type: tag_event
+    description: "Tag as OT advisory"
+    params:
+      tags:
+        - ot_advisory
+        - human_required
+        - no_automated_response

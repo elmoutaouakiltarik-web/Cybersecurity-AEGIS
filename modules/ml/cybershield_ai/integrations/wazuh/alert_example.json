@@ -1,0 +1,9 @@
+{
+  "source": "cybershield_ai_real_pro",
+  "asset": "10.10.1.25",
+  "prediction": "ATTACK",
+  "attack_probability": 0.93,
+  "risk_score": 93,
+  "risk_level": "critical",
+  "recommended_action": "Investigate immediately; isolate if confirmed by policy."
+}

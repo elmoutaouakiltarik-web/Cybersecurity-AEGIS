@@ -1,0 +1,31 @@
+interface: eth0
+simulate: true
+baseline_days: 7
+alert_threshold: 3.0
+orchestrator_url: http://localhost:8080
+
+authorized_assets:
+  - ip: 192.168.10.10
+    name: demo-plc-1
+    purdue_level: 1
+    protocols:
+      - modbus
+  - ip: 192.168.10.20
+    name: demo-hmi-1
+    purdue_level: 2
+    protocols:
+      - opc_ua
+
+passive_protocols:
+  modbus:
+    enabled: true
+    port: 502
+  dnp3:
+    enabled: true
+    port: 20000
+  iec61850_mms:
+    enabled: false
+    port: 102
+  opc_ua:
+    enabled: true
+    port: 4840

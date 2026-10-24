@@ -1,0 +1,6 @@
+flask>=2.3
+requests>=2.32
+PyYAML>=6.0
+yara-python>=4.5
+psutil>=5.9
+pywin32>=306; sys_platform == "win32"

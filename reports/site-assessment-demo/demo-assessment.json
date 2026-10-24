@@ -1,0 +1,1115 @@
+{
+  "id": "selftest",
+  "site": "Stabilimento demo — Linea 2",
+  "client": "Demo Industria S.p.A.",
+  "engagement_id": "",
+  "operator": "self-test",
+  "authorization_ref": "SELFTEST-LOCAL-ONLY",
+  "mode": "passive",
+  "started_at": "2026-10-21T21:43:29+00:00",
+  "finished_at": "2026-10-21T21:43:29+00:00",
+  "duration_s": 0.0,
+  "status": "done",
+  "error": "",
+  "site_score": 0,
+  "severity_counts": {
+    "critical": 13,
+    "high": 5,
+    "medium": 1,
+    "low": 1,
+    "info": 0
+  },
+  "assets": [
+    {
+      "ip": "10.10.0.1",
+      "mac": "02:00:00:00:00:66",
+      "hostname": "",
+      "vendor": "",
+      "device_type": "unknown",
+      "model": "",
+      "firmware": "",
+      "purdue_level": 1,
+      "zone": "Controllo Linea 2",
+      "protocols": [],
+      "ports": [],
+      "identities": {},
+      "tags": [],
+      "observations": [
+        "ARP visto per 10.10.0.5",
+        "ARP visto per 10.10.0.9",
+        "ARP visto per 10.10.0.11"
+      ],
+      "sources": [
+        "passive"
+      ],
+      "first_seen": "2023-11-14T22:13:31+00:00",
+      "last_seen": "2023-11-14T22:13:33+00:00",
+      "confidence": "low",
+      "risk_score": 100,
+      "is_ot": false,
+      "open_ports": []
+    },
+    {
+      "ip": "10.10.0.10",
+      "mac": "00:11:43:00:00:01",
+      "hostname": "",
+      "vendor": "Dell",
+      "device_type": "plc",
+      "model": "",
+      "firmware": "",
+      "purdue_level": 1,
+      "zone": "Controllo Linea 2",
+      "protocols": [
+        "modbus",
+        "enip"
+      ],
+      "ports": [],
+      "identities": {},
+      "tags": [],
+      "observations": [],
+      "sources": [
+        "passive"
+      ],
+      "first_seen": "2023-11-14T22:13:22+00:00",
+      "last_seen": "2023-11-14T22:13:33+00:00",
+      "confidence": "medium",
+      "risk_score": 100,
+      "is_ot": false,
+      "open_ports": []
+    },
+    {
+      "ip": "10.10.0.130",
+      "mac": "00:11:43:00:00:50",
+      "hostname": "",
+      "vendor": "Dell",
+      "device_type": "plc",
+      "model": "",
+      "firmware": "",
+      "purdue_level": 3,
+      "zone": "Office",
+      "protocols": [
+        "modbus",
+        "s7comm",
+        "dnp3",
+        "bacnet",
+        "iec104",
+        "smb"
+      ],
+      "ports": [],
+      "identities": {},
+      "tags": [],
+      "observations": [],
+      "sources": [
+        "passive"
+      ],
+      "first_seen": "2023-11-14T22:13:23+00:00",
+      "last_seen": "2023-11-14T22:13:34+00:00",
+      "confidence": "medium",
+      "risk_score": 0,
+      "is_ot": false,
+      "open_ports": []
+    },
+    {
+      "ip": "10.10.0.2",
+      "mac": "00:80:63:aa:bb:cc",
+      "hostname": "SW-LINEA-2",
+      "vendor": "Hirschmann",
+      "device_type": "switch",
+      "model": "",
+      "firmware": "",
+      "purdue_level": 1,
+      "zone": "Controllo Linea 2",
+      "protocols": [],
+      "ports": [],
+      "identities": {},
+      "tags": [],
+      "observations": [
+        "LLDP: SW-LINEA-2 Industrial Ethernet Switch, firmware 09.10"
+      ],
+      "sources": [
+        "passive"
+      ],
+      "first_seen": "2023-11-14T22:13:21+00:00",
+      "last_seen": "2023-11-14T22:13:21+00:00",
+      "confidence": "high",
+      "risk_score": 0,
+      "is_ot": false,
+      "open_ports": []
+    },
+    {
+      "ip": "10.10.0.20",
+      "mac": "00:11:43:00:00:50",
+      "hostname": "",
+      "vendor": "Dell",
+      "device_type": "opcua-server",
+      "model": "",
+      "firmware": "",
+      "purdue_level": 1,
+      "zone": "Controllo Linea 2",
+      "protocols": [
+        "opcua",
+        "smb"
+      ],
+      "ports": [
+        {
+          "port": 445,
+          "proto": "tcp",
+          "service": "smb",
+          "state": "open",
+          "banner": "",
+          "safety_class": "management",
+          "evidence": "osservato nel traffico (2 pacchetti)"
+        }
+      ],
+      "identities": {},
+      "tags": [],
+      "observations": [],
+      "sources": [
+        "passive"
+      ],
+      "first_seen": "2023-11-14T22:13:29+00:00",
+      "last_seen": "2023-11-14T22:13:34+00:00",
+      "confidence": "medium",
+      "risk_score": 100,
+      "is_ot": false,
+      "open_ports": [
+        445
+      ]
+    },
+    {
+      "ip": "10.10.0.30",
+      "mac": "",
+      "hostname": "",
+      "vendor": "",
+      "device_type": "rtu",
+      "model": "",
+      "firmware": "",
+      "purdue_level": 1,
+      "zone": "Controllo Linea 2",
+      "protocols": [
+        "dnp3"
+      ],
+      "ports": [],
+      "identities": {},
+      "tags": [
+        "ot"
+      ],
+      "observations": [],
+      "sources": [
+        "passive"
+      ],
+      "first_seen": "2023-11-14T22:13:25+00:00",
+      "last_seen": "2023-11-14T22:13:25+00:00",
+      "confidence": "medium",
+      "risk_score": 100,
+      "is_ot": true,
+      "open_ports": []
+    },
+    {
+      "ip": "10.10.0.40",
+      "mac": "",
+      "hostname": "",
+      "vendor": "",
+      "device_type": "unknown",
+      "model": "",
+      "firmware": "",
+      "purdue_level": 1,
+      "zone": "Controllo Linea 2",
+      "protocols": [
+        "bacnet"
+      ],
+      "ports": [],
+      "identities": {},
+      "tags": [
+        "ot"
+      ],
+      "observations": [],
+      "sources": [
+        "passive"
+      ],
+      "first_seen": "2023-11-14T22:13:26+00:00",
+      "last_seen": "2023-11-14T22:13:26+00:00",
+      "confidence": "medium",
+      "risk_score": 100,
+      "is_ot": true,
+      "open_ports": []
+    },
+    {
+      "ip": "10.10.0.5",
+      "mac": "00:0e:8c:11:22:33",
+      "hostname": "",
+      "vendor": "Siemens",
+      "device_type": "plc",
+      "model": "",
+      "firmware": "",
+      "purdue_level": 1,
+      "zone": "Controllo Linea 2",
+      "protocols": [
+        "modbus",
+        "s7comm"
+      ],
+      "ports": [],
+      "identities": {},
+      "tags": [
+        "ot"
+      ],
+      "observations": [
+        "ARP visto per 10.10.0.1"
+      ],
+      "sources": [
+        "passive"
+      ],
+      "first_seen": "2023-11-14T22:13:20+00:00",
+      "last_seen": "2023-11-14T22:13:30+00:00",
+      "confidence": "medium",
+      "risk_score": 100,
+      "is_ot": true,
+      "open_ports": []
+    },
+    {
+      "ip": "10.10.0.60",
+      "mac": "",
+      "hostname": "",
+      "vendor": "",
+      "device_type": "unknown",
+      "model": "",
+      "firmware": "",
+      "purdue_level": 1,
+      "zone": "Controllo Linea 2",
+      "protocols": [
+        "iec104"
+      ],
+      "ports": [],
+      "identities": {},
+      "tags": [
+        "ot"
+      ],
+      "observations": [],
+      "sources": [
+        "passive"
+      ],
+      "first_seen": "2023-11-14T22:13:27+00:00",
+      "last_seen": "2023-11-14T22:13:27+00:00",
+      "confidence": "medium",
+      "risk_score": 100,
+      "is_ot": true,
+      "open_ports": []
+    },
+    {
+      "ip": "10.10.0.70",
+      "mac": "",
+      "hostname": "",
+      "vendor": "",
+      "device_type": "opcua-server",
+      "model": "",
+      "firmware": "",
+      "purdue_level": 1,
+      "zone": "Controllo Linea 2",
+      "protocols": [
+        "opcua"
+      ],
+      "ports": [],
+      "identities": {},
+      "tags": [
+        "ot"
+      ],
+      "observations": [],
+      "sources": [
+        "passive"
+      ],
+      "first_seen": "2023-11-14T22:13:29+00:00",
+      "last_seen": "2023-11-14T22:13:29+00:00",
+      "confidence": "medium",
+      "risk_score": 0,
+      "is_ot": true,
+      "open_ports": []
+    },
+    {
+      "ip": "10.10.0.80",
+      "mac": "",
+      "hostname": "",
+      "vendor": "",
+      "device_type": "plc",
+      "model": "",
+      "firmware": "",
+      "purdue_level": 1,
+      "zone": "Controllo Linea 2",
+      "protocols": [
+        "enip"
+      ],
+      "ports": [],
+      "identities": {},
+      "tags": [
+        "ot"
+      ],
+      "observations": [],
+      "sources": [
+        "passive"
+      ],
+      "first_seen": "2023-11-14T22:13:33+00:00",
+      "last_seen": "2023-11-14T22:13:33+00:00",
+      "confidence": "medium",
+      "risk_score": 100,
+      "is_ot": true,
+      "open_ports": []
+    }
+  ],
+  "findings": [
+    {
+      "id": "10ab16191eb1",
+      "title": "Comando di scrittura OT osservato sul traffico",
+      "severity": "critical",
+      "score": 9.9,
+      "asset_ip": "10.10.0.30",
+      "asset_label": "10.10.0.30",
+      "category": "malware",
+      "evidence": "function=0x05; 10.10.0.130 -> 10.10.0.30",
+      "why": "Un comando di scrittura puo' essere legittimo (operatore, SCADA) o malevolo (malware, insider, tool di test). Va attribuito: chi lo ha inviato, da quale postazione, in quale finestra temporale. E' il segnale piu' diretto di manipolazione del processo.",
+      "remediation": "Correlare con il turno di produzione e i log del SCADA. Se non attribuibile: isolare la sorgente, acquisire evidenze, verificare lo stato fisico degli attuatori. Implementare allow-list degli host autorizzati a scrivere (firewall industriale con deep packet inspection).",
+      "production_safe": true,
+      "mitre_ics": "T0855 (Unauthorized Command Message) / T0836 (Modify Parameter)",
+      "iec62443": "IEC 62443-3-3 SR 3.1, SR 6.1",
+      "confidence": "high",
+      "references": [
+        "NIST SP 800-82 Rev.3 — Guide to OT Security",
+        "IEC 62443-3-3 — System security requirements"
+      ],
+      "verified": false,
+      "production_safe_label": "applicabile in produzione"
+    },
+    {
+      "id": "6be723250153",
+      "title": "Comando di scrittura OT osservato sul traffico",
+      "severity": "critical",
+      "score": 9.9,
+      "asset_ip": "10.10.0.40",
+      "asset_label": "10.10.0.40",
+      "category": "malware",
+      "evidence": "service=15; 10.10.0.130 -> 10.10.0.40",
+      "why": "Un comando di scrittura puo' essere legittimo (operatore, SCADA) o malevolo (malware, insider, tool di test). Va attribuito: chi lo ha inviato, da quale postazione, in quale finestra temporale. E' il segnale piu' diretto di manipolazione del processo.",
+      "remediation": "Correlare con il turno di produzione e i log del SCADA. Se non attribuibile: isolare la sorgente, acquisire evidenze, verificare lo stato fisico degli attuatori. Implementare allow-list degli host autorizzati a scrivere (firewall industriale con deep packet inspection).",
+      "production_safe": true,
+      "mitre_ics": "T0855 (Unauthorized Command Message) / T0836 (Modify Parameter)",
+      "iec62443": "IEC 62443-3-3 SR 3.1, SR 6.1",
+      "confidence": "high",
+      "references": [
+        "NIST SP 800-82 Rev.3 — Guide to OT Security",
+        "IEC 62443-3-3 — System security requirements"
+      ],
+      "verified": false,
+      "production_safe_label": "applicabile in produzione"
+    },
+    {
+      "id": "f782bff64c68",
+      "title": "Comando di scrittura OT osservato sul traffico",
+      "severity": "critical",
+      "score": 9.9,
+      "asset_ip": "10.10.0.5",
+      "asset_label": "10.10.0.5",
+      "category": "malware",
+      "evidence": "fc=6 unit=1 addr=10 qty=None; 10.10.0.130 -> 10.10.0.5",
+      "why": "Un comando di scrittura puo' essere legittimo (operatore, SCADA) o malevolo (malware, insider, tool di test). Va attribuito: chi lo ha inviato, da quale postazione, in quale finestra temporale. E' il segnale piu' diretto di manipolazione del processo.",
+      "remediation": "Correlare con il turno di produzione e i log del SCADA. Se non attribuibile: isolare la sorgente, acquisire evidenze, verificare lo stato fisico degli attuatori. Implementare allow-list degli host autorizzati a scrivere (firewall industriale con deep packet inspection).",
+      "production_safe": true,
+      "mitre_ics": "T0855 (Unauthorized Command Message) / T0836 (Modify Parameter)",
+      "iec62443": "IEC 62443-3-3 SR 3.1, SR 6.1",
+      "confidence": "high",
+      "references": [
+        "NIST SP 800-82 Rev.3 — Guide to OT Security",
+        "IEC 62443-3-3 — System security requirements"
+      ],
+      "verified": false,
+      "production_safe_label": "applicabile in produzione"
+    },
+    {
+      "id": "cc3462d2e570",
+      "title": "Comando di scrittura OT osservato sul traffico",
+      "severity": "critical",
+      "score": 9.9,
+      "asset_ip": "10.10.0.60",
+      "asset_label": "10.10.0.60",
+      "category": "malware",
+      "evidence": "type_id=45 cot=3; 10.10.0.130 -> 10.10.0.60",
+      "why": "Un comando di scrittura puo' essere legittimo (operatore, SCADA) o malevolo (malware, insider, tool di test). Va attribuito: chi lo ha inviato, da quale postazione, in quale finestra temporale. E' il segnale piu' diretto di manipolazione del processo.",
+      "remediation": "Correlare con il turno di produzione e i log del SCADA. Se non attribuibile: isolare la sorgente, acquisire evidenze, verificare lo stato fisico degli attuatori. Implementare allow-list degli host autorizzati a scrivere (firewall industriale con deep packet inspection).",
+      "production_safe": true,
+      "mitre_ics": "T0855 (Unauthorized Command Message) / T0836 (Modify Parameter)",
+      "iec62443": "IEC 62443-3-3 SR 3.1, SR 6.1",
+      "confidence": "high",
+      "references": [
+        "NIST SP 800-82 Rev.3 — Guide to OT Security",
+        "IEC 62443-3-3 — System security requirements"
+      ],
+      "verified": false,
+      "production_safe_label": "applicabile in produzione"
+    },
+    {
+      "id": "1565910f1749",
+      "title": "Asset industriale con traffico verso Internet",
+      "severity": "critical",
+      "score": 9.7,
+      "asset_ip": "10.10.0.5",
+      "asset_label": "10.10.0.5",
+      "category": "malware",
+      "evidence": "proto=https dport=443",
+      "why": "Nessun PLC/HMI deve avere egress diretto. Questo pattern e' compatibile con C2 di malware, esfiltrazione di dati di processo o un doppio NIC che bypassa la segmentazione.",
+      "remediation": "Bloccare subito l'egress a firewall (azione normalmente non invasiva), identificare il processo che genera il traffico, acquisire memoria/rete dell'host prima di spegnerlo, poi analisi DFIR.",
+      "production_safe": true,
+      "mitre_ics": "T0885 (Commonly Used Port) / T1041 (Exfiltration Over C2 Channel)",
+      "iec62443": "IEC 62443-3-3 SR 5.1, SR 5.2",
+      "confidence": "medium",
+      "references": [
+        "NIST SP 800-82 Rev.3 — Guide to OT Security"
+      ],
+      "verified": false,
+      "production_safe_label": "applicabile in produzione"
+    },
+    {
+      "id": "fe1e20bf3d7f",
+      "title": "Modbus/TCP esposto senza autenticazione",
+      "severity": "critical",
+      "score": 9.1,
+      "asset_ip": "10.10.0.10",
+      "asset_label": "Dell",
+      "category": "exposure",
+      "evidence": "protocol=modbus; porte/contesto=da traffico passivo; zona=Controllo Linea 2",
+      "why": "Modbus/TCP non prevede autenticazione ne' cifratura: chiunque raggiunga l'asset puo' leggere e spesso scrivere variabili di processo. Un errore di configurazione o un host infetto nella stessa VLAN diventa un comando diretto sull'impianto.",
+      "remediation": "1) Mappare i conduit necessari (chi deve parlare con questo asset). 2) Applicare ACL/firewall industriale con default-deny tra IT e OT. 3) Mettere un IDS OT passivo su SPAN/mirror per rilevare comandi anomali. 4) Se il PLC lo supporta, abilitare le protezioni di accesso (password di protezione, disable PUT/GET) come da manuale del costruttore.",
+      "production_safe": false,
+      "mitre_ics": "T0836 (Modify Parameter) / T0855 (Unauthorized Command Message)",
+      "iec62443": "IEC 62443-3-3 SR 1.1, SR 3.1, SR 5.1",
+      "confidence": "medium",
+      "references": [
+        "NIST SP 800-82 Rev.3 — Guide to OT Security",
+        "IEC 62443-3-3 — System security requirements",
+        "ISA/IEC 62443-3-2 — Zone and conduit partitioning"
+      ],
+      "verified": false,
+      "production_safe_label": "richiede fermata/manutenzione"
+    },
+    {
+      "id": "e978bdef5d24",
+      "title": "DNP3 esposto senza autenticazione",
+      "severity": "critical",
+      "score": 9.1,
+      "asset_ip": "10.10.0.30",
+      "asset_label": "10.10.0.30",
+      "category": "exposure",
+      "evidence": "protocol=dnp3; porte/contesto=da traffico passivo; zona=Controllo Linea 2",
+      "why": "DNP3 non prevede autenticazione ne' cifratura: chiunque raggiunga l'asset puo' leggere e spesso scrivere variabili di processo. Un errore di configurazione o un host infetto nella stessa VLAN diventa un comando diretto sull'impianto.",
+      "remediation": "1) Mappare i conduit necessari (chi deve parlare con questo asset). 2) Applicare ACL/firewall industriale con default-deny tra IT e OT. 3) Mettere un IDS OT passivo su SPAN/mirror per rilevare comandi anomali. 4) Se il PLC lo supporta, abilitare le protezioni di accesso (password di protezione, disable PUT/GET) come da manuale del costruttore.",
+      "production_safe": false,
+      "mitre_ics": "T0836 (Modify Parameter) / T0855 (Unauthorized Command Message)",
+      "iec62443": "IEC 62443-3-3 SR 1.1, SR 3.1, SR 5.1",
+      "confidence": "medium",
+      "references": [
+        "NIST SP 800-82 Rev.3 — Guide to OT Security",
+        "IEC 62443-3-3 — System security requirements",
+        "ISA/IEC 62443-3-2 — Zone and conduit partitioning"
+      ],
+      "verified": false,
+      "production_safe_label": "richiede fermata/manutenzione"
+    },
+    {
+      "id": "0f23a1fd3b3e",
+      "title": "BACnet/IP esposto senza autenticazione",
+      "severity": "critical",
+      "score": 9.1,
+      "asset_ip": "10.10.0.40",
+      "asset_label": "10.10.0.40",
+      "category": "exposure",
+      "evidence": "protocol=bacnet; porte/contesto=da traffico passivo; zona=Controllo Linea 2",
+      "why": "BACnet/IP non prevede autenticazione ne' cifratura: chiunque raggiunga l'asset puo' leggere e spesso scrivere variabili di processo. Un errore di configurazione o un host infetto nella stessa VLAN diventa un comando diretto sull'impianto.",
+      "remediation": "1) Mappare i conduit necessari (chi deve parlare con questo asset). 2) Applicare ACL/firewall industriale con default-deny tra IT e OT. 3) Mettere un IDS OT passivo su SPAN/mirror per rilevare comandi anomali. 4) Se il PLC lo supporta, abilitare le protezioni di accesso (password di protezione, disable PUT/GET) come da manuale del costruttore.",
+      "production_safe": false,
+      "mitre_ics": "T0836 (Modify Parameter) / T0855 (Unauthorized Command Message)",
+      "iec62443": "IEC 62443-3-3 SR 1.1, SR 3.1, SR 5.1",
+      "confidence": "medium",
+      "references": [
+        "NIST SP 800-82 Rev.3 — Guide to OT Security",
+        "IEC 62443-3-3 — System security requirements",
+        "ISA/IEC 62443-3-2 — Zone and conduit partitioning"
+      ],
+      "verified": false,
+      "production_safe_label": "richiede fermata/manutenzione"
+    },
+    {
+      "id": "0b63741e9f31",
+      "title": "Modbus/TCP esposto senza autenticazione",
+      "severity": "critical",
+      "score": 9.1,
+      "asset_ip": "10.10.0.5",
+      "asset_label": "Siemens",
+      "category": "exposure",
+      "evidence": "protocol=modbus; porte/contesto=da traffico passivo; zona=Controllo Linea 2",
+      "why": "Modbus/TCP non prevede autenticazione ne' cifratura: chiunque raggiunga l'asset puo' leggere e spesso scrivere variabili di processo. Un errore di configurazione o un host infetto nella stessa VLAN diventa un comando diretto sull'impianto.",
+      "remediation": "1) Mappare i conduit necessari (chi deve parlare con questo asset). 2) Applicare ACL/firewall industriale con default-deny tra IT e OT. 3) Mettere un IDS OT passivo su SPAN/mirror per rilevare comandi anomali. 4) Se il PLC lo supporta, abilitare le protezioni di accesso (password di protezione, disable PUT/GET) come da manuale del costruttore.",
+      "production_safe": false,
+      "mitre_ics": "T0836 (Modify Parameter) / T0855 (Unauthorized Command Message)",
+      "iec62443": "IEC 62443-3-3 SR 1.1, SR 3.1, SR 5.1",
+      "confidence": "medium",
+      "references": [
+        "NIST SP 800-82 Rev.3 — Guide to OT Security",
+        "IEC 62443-3-3 — System security requirements",
+        "ISA/IEC 62443-3-2 — Zone and conduit partitioning"
+      ],
+      "verified": false,
+      "production_safe_label": "richiede fermata/manutenzione"
+    },
+    {
+      "id": "91a66e432441",
+      "title": "IEC 60870-5-104 esposto senza autenticazione",
+      "severity": "critical",
+      "score": 9.1,
+      "asset_ip": "10.10.0.60",
+      "asset_label": "10.10.0.60",
+      "category": "exposure",
+      "evidence": "protocol=iec104; porte/contesto=da traffico passivo; zona=Controllo Linea 2",
+      "why": "IEC 60870-5-104 non prevede autenticazione ne' cifratura: chiunque raggiunga l'asset puo' leggere e spesso scrivere variabili di processo. Un errore di configurazione o un host infetto nella stessa VLAN diventa un comando diretto sull'impianto.",
+      "remediation": "1) Mappare i conduit necessari (chi deve parlare con questo asset). 2) Applicare ACL/firewall industriale con default-deny tra IT e OT. 3) Mettere un IDS OT passivo su SPAN/mirror per rilevare comandi anomali. 4) Se il PLC lo supporta, abilitare le protezioni di accesso (password di protezione, disable PUT/GET) come da manuale del costruttore.",
+      "production_safe": false,
+      "mitre_ics": "T0836 (Modify Parameter) / T0855 (Unauthorized Command Message)",
+      "iec62443": "IEC 62443-3-3 SR 1.1, SR 3.1, SR 5.1",
+      "confidence": "medium",
+      "references": [
+        "NIST SP 800-82 Rev.3 — Guide to OT Security",
+        "IEC 62443-3-3 — System security requirements",
+        "ISA/IEC 62443-3-2 — Zone and conduit partitioning"
+      ],
+      "verified": false,
+      "production_safe_label": "richiede fermata/manutenzione"
+    },
+    {
+      "id": "946f39cf9c15",
+      "title": "EtherNet/IP (CIP) esposto senza autenticazione",
+      "severity": "critical",
+      "score": 9.1,
+      "asset_ip": "10.10.0.80",
+      "asset_label": "10.10.0.80",
+      "category": "exposure",
+      "evidence": "protocol=enip; porte/contesto=da traffico passivo; zona=Controllo Linea 2",
+      "why": "EtherNet/IP (CIP) non prevede autenticazione ne' cifratura: chiunque raggiunga l'asset puo' leggere e spesso scrivere variabili di processo. Un errore di configurazione o un host infetto nella stessa VLAN diventa un comando diretto sull'impianto.",
+      "remediation": "1) Mappare i conduit necessari (chi deve parlare con questo asset). 2) Applicare ACL/firewall industriale con default-deny tra IT e OT. 3) Mettere un IDS OT passivo su SPAN/mirror per rilevare comandi anomali. 4) Se il PLC lo supporta, abilitare le protezioni di accesso (password di protezione, disable PUT/GET) come da manuale del costruttore.",
+      "production_safe": false,
+      "mitre_ics": "T0836 (Modify Parameter) / T0855 (Unauthorized Command Message)",
+      "iec62443": "IEC 62443-3-3 SR 1.1, SR 3.1, SR 5.1",
+      "confidence": "medium",
+      "references": [
+        "NIST SP 800-82 Rev.3 — Guide to OT Security",
+        "IEC 62443-3-3 — System security requirements",
+        "ISA/IEC 62443-3-2 — Zone and conduit partitioning"
+      ],
+      "verified": false,
+      "production_safe_label": "richiede fermata/manutenzione"
+    },
+    {
+      "id": "5ed9a6b3b339",
+      "title": "Conflitto ARP / possibile man-in-the-middle",
+      "severity": "critical",
+      "score": 9.0,
+      "asset_ip": "10.10.0.1",
+      "asset_label": "10.10.0.1",
+      "category": "network-integrity",
+      "evidence": "mac_dominante=02:00:00:00:00:66; altri=00:80:63:aa:bb:cc",
+      "why": "Due MAC per lo stesso IP possono essere un IP duplicato (errore di configurazione) o un ARP spoofing: in entrambi i casi il traffico di processo puo' finire all'host sbagliato.",
+      "remediation": "Identificare i due MAC sulle tabelle dei switch, correggere l'IP duplicato o isolare la porta. Abilitare DHCP snooping e Dynamic ARP Inspection dove possibile.",
+      "production_safe": false,
+      "mitre_ics": "T0830 (Adversary-in-the-Middle)",
+      "iec62443": "IEC 62443-3-3 SR 3.1",
+      "confidence": "medium",
+      "references": [
+        "IEC 62443-3-3 — System security requirements"
+      ],
+      "verified": false,
+      "production_safe_label": "richiede fermata/manutenzione"
+    },
+    {
+      "id": "54b2d2cc4f75",
+      "title": "Servizi IT ad alto rischio in zona di processo",
+      "severity": "critical",
+      "score": 8.8,
+      "asset_ip": "10.10.0.20",
+      "asset_label": "Dell",
+      "category": "hardening",
+      "evidence": "servizi esposti: SMB:445",
+      "why": "Telnet, FTP e SMB trasmettono credenziali in chiaro e sono i vettori principali di ransomware che poi si propaga ai PLC. Un HMI Windows infetto puo' fermare la linea anche se il PLC e' sano.",
+      "remediation": "Disabilitare i servizi non necessari (prima su un asset pilota, in finestra di manutenzione), sostituire Telnet/FTP con SSH/SFTP, applicare SMB signing e disabilitare SMBv1, limitare RDP a un jump host.",
+      "production_safe": false,
+      "mitre_ics": "T1021 (Remote Services) / T1210 (Exploitation of Remote Services)",
+      "iec62443": "IEC 62443-3-3 SR 1.5, SR 4.1, SR 7.6",
+      "confidence": "high",
+      "references": [
+        "NIST SP 800-82 Rev.3 — Guide to OT Security",
+        "IEC 62443-3-3 — System security requirements"
+      ],
+      "verified": false,
+      "production_safe_label": "richiede fermata/manutenzione"
+    },
+    {
+      "id": "e6b32d8c8311",
+      "title": "Rete piatta: asset IT e OT nella stessa sottorete",
+      "severity": "high",
+      "score": 8.3,
+      "asset_ip": "10.10.0.1",
+      "asset_label": "10.10.0.1",
+      "category": "segmentation",
+      "evidence": "10.10.0.0/24: 11 asset, ruoli Purdue [1, 3]",
+      "why": "Senza separazione, un PC office compromesso puo' parlare direttamente con PLC e HMI. E' la condizione che trasforma un incidente IT in un fermo di produzione.",
+      "remediation": "Definire zone e conduit (IEC 62443-3-2), creare VLAN separate per controllo, supervisione e office, applicare un firewall industriale. Intervento da pianificare: richiede mappa aggiornata e finestra.",
+      "production_safe": false,
+      "mitre_ics": "T0886 (Remote Services)",
+      "iec62443": "IEC 62443-3-3 SR 5.1, SR 5.2",
+      "confidence": "high",
+      "references": [
+        "ISA/IEC 62443-3-2 — Zone and conduit partitioning"
+      ],
+      "verified": false,
+      "production_safe_label": "richiede fermata/manutenzione"
+    },
+    {
+      "id": "37cb3c9e4048",
+      "title": "Flusso di controllo tra zone Purdue diverse",
+      "severity": "high",
+      "score": 7.9,
+      "asset_ip": "10.10.0.30",
+      "asset_label": "10.10.0.30",
+      "category": "segmentation",
+      "evidence": "purdue 3->1",
+      "why": "Un flusso che attraversa il confine IT/OT senza un conduit dichiarato annulla la segmentazione: un ransomware nella rete office puo' raggiungere il campo.",
+      "remediation": "Documentare o rimuovere il flusso. Se serve, creare un conduit esplicito con firewall industriale e ispezione del protocollo.",
+      "production_safe": false,
+      "mitre_ics": "T0886 (Remote Services)",
+      "iec62443": "IEC 62443-3-3 SR 5.1, SR 5.2",
+      "confidence": "high",
+      "references": [
+        "ISA/IEC 62443-3-2 — Zone and conduit partitioning",
+        "IEC 62443-3-3 — System security requirements"
+      ],
+      "verified": false,
+      "production_safe_label": "richiede fermata/manutenzione"
+    },
+    {
+      "id": "2cf9014ca19b",
+      "title": "Flusso di controllo tra zone Purdue diverse",
+      "severity": "high",
+      "score": 7.9,
+      "asset_ip": "10.10.0.40",
+      "asset_label": "10.10.0.40",
+      "category": "segmentation",
+      "evidence": "purdue 3->1",
+      "why": "Un flusso che attraversa il confine IT/OT senza un conduit dichiarato annulla la segmentazione: un ransomware nella rete office puo' raggiungere il campo.",
+      "remediation": "Documentare o rimuovere il flusso. Se serve, creare un conduit esplicito con firewall industriale e ispezione del protocollo.",
+      "production_safe": false,
+      "mitre_ics": "T0886 (Remote Services)",
+      "iec62443": "IEC 62443-3-3 SR 5.1, SR 5.2",
+      "confidence": "high",
+      "references": [
+        "ISA/IEC 62443-3-2 — Zone and conduit partitioning",
+        "IEC 62443-3-3 — System security requirements"
+      ],
+      "verified": false,
+      "production_safe_label": "richiede fermata/manutenzione"
+    },
+    {
+      "id": "abdafc3e8a88",
+      "title": "Flusso di controllo tra zone Purdue diverse",
+      "severity": "high",
+      "score": 7.9,
+      "asset_ip": "10.10.0.5",
+      "asset_label": "Siemens",
+      "category": "segmentation",
+      "evidence": "purdue 3->1",
+      "why": "Un flusso che attraversa il confine IT/OT senza un conduit dichiarato annulla la segmentazione: un ransomware nella rete office puo' raggiungere il campo.",
+      "remediation": "Documentare o rimuovere il flusso. Se serve, creare un conduit esplicito con firewall industriale e ispezione del protocollo.",
+      "production_safe": false,
+      "mitre_ics": "T0886 (Remote Services)",
+      "iec62443": "IEC 62443-3-3 SR 5.1, SR 5.2",
+      "confidence": "high",
+      "references": [
+        "ISA/IEC 62443-3-2 — Zone and conduit partitioning",
+        "IEC 62443-3-3 — System security requirements"
+      ],
+      "verified": false,
+      "production_safe_label": "richiede fermata/manutenzione"
+    },
+    {
+      "id": "800c32d52f1c",
+      "title": "Flusso di controllo tra zone Purdue diverse",
+      "severity": "high",
+      "score": 7.9,
+      "asset_ip": "10.10.0.60",
+      "asset_label": "10.10.0.60",
+      "category": "segmentation",
+      "evidence": "purdue 3->1",
+      "why": "Un flusso che attraversa il confine IT/OT senza un conduit dichiarato annulla la segmentazione: un ransomware nella rete office puo' raggiungere il campo.",
+      "remediation": "Documentare o rimuovere il flusso. Se serve, creare un conduit esplicito con firewall industriale e ispezione del protocollo.",
+      "production_safe": false,
+      "mitre_ics": "T0886 (Remote Services)",
+      "iec62443": "IEC 62443-3-3 SR 5.1, SR 5.2",
+      "confidence": "high",
+      "references": [
+        "ISA/IEC 62443-3-2 — Zone and conduit partitioning",
+        "IEC 62443-3-3 — System security requirements"
+      ],
+      "verified": false,
+      "production_safe_label": "richiede fermata/manutenzione"
+    },
+    {
+      "id": "47dad3c5f3b3",
+      "title": "Percentuale elevata di broadcast/multicast",
+      "severity": "medium",
+      "score": 4.8,
+      "asset_ip": "",
+      "asset_label": "rete L2",
+      "category": "network-integrity",
+      "evidence": "broadcast ratio=44.4%",
+      "why": "Broadcast eccessivo riduce la banda disponibile per il traffico isocrono e puo' indicare un loop L2 o un device malfunzionante.",
+      "remediation": "Verificare STP, loop e device che generano broadcast; abilitare storm control sulle porte di accesso.",
+      "production_safe": true,
+      "mitre_ics": "",
+      "iec62443": "IEC 62443-3-3 SR 7.1",
+      "confidence": "medium",
+      "references": [
+        "IEC 62443-3-3 — System security requirements"
+      ],
+      "verified": false,
+      "production_safe_label": "applicabile in produzione"
+    },
+    {
+      "id": "d0e224536c96",
+      "title": "Asset OT non identificati (censimento incompleto)",
+      "severity": "low",
+      "score": 3.4,
+      "asset_ip": "",
+      "asset_label": "inventario",
+      "category": "inventory",
+      "evidence": "5 asset su 6 senza vendor/identita': 10.10.0.30, 10.10.0.40, 10.10.0.60, 10.10.0.70, 10.10.0.80",
+      "why": "Senza vendor e modello non si possono valutare firmware, vulnerabilita' note e fine supporto. Un inventario incompleto e' il primo rischio gestionale in un audit IEC 62443.",
+      "remediation": "Completare il censimento con il registro asset di impianto, foto targhette e documentazione di commessa; ripetere poi l'assessment per arricchire le identita'.",
+      "production_safe": true,
+      "mitre_ics": "",
+      "iec62443": "IEC 62443-2-1, SR 7.8",
+      "confidence": "high",
+      "references": [
+        "IEC 62443-3-3 — System security requirements"
+      ],
+      "verified": false,
+      "production_safe_label": "applicabile in produzione"
+    }
+  ],
+  "conversations": [
+    {
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.20",
+      "protocol": "tcp",
+      "src_port": 49000,
+      "dst_port": 445,
+      "ot_protocol": "",
+      "packets": 2,
+      "bytes": 113,
+      "first_seen": "2023-11-14T22:13:34+00:00",
+      "last_seen": "2023-11-14T22:13:34+00:00"
+    },
+    {
+      "src_ip": "10.10.0.10",
+      "dst_ip": "10.10.0.5",
+      "protocol": "tcp",
+      "src_port": 51000,
+      "dst_port": 502,
+      "ot_protocol": "modbus",
+      "packets": 1,
+      "bytes": 66,
+      "first_seen": "2023-11-14T22:13:22+00:00",
+      "last_seen": "2023-11-14T22:13:22+00:00"
+    },
+    {
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.5",
+      "protocol": "tcp",
+      "src_port": 52000,
+      "dst_port": 502,
+      "ot_protocol": "modbus",
+      "packets": 1,
+      "bytes": 66,
+      "first_seen": "2023-11-14T22:13:23+00:00",
+      "last_seen": "2023-11-14T22:13:23+00:00"
+    },
+    {
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.5",
+      "protocol": "tcp",
+      "src_port": 52001,
+      "dst_port": 102,
+      "ot_protocol": "s7comm",
+      "packets": 1,
+      "bytes": 85,
+      "first_seen": "2023-11-14T22:13:24+00:00",
+      "last_seen": "2023-11-14T22:13:24+00:00"
+    },
+    {
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.30",
+      "protocol": "tcp",
+      "src_port": 52002,
+      "dst_port": 20000,
+      "ot_protocol": "dnp3",
+      "packets": 1,
+      "bytes": 76,
+      "first_seen": "2023-11-14T22:13:25+00:00",
+      "last_seen": "2023-11-14T22:13:25+00:00"
+    },
+    {
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.40",
+      "protocol": "udp",
+      "src_port": 50000,
+      "dst_port": 47808,
+      "ot_protocol": "bacnet",
+      "packets": 1,
+      "bytes": 59,
+      "first_seen": "2023-11-14T22:13:26+00:00",
+      "last_seen": "2023-11-14T22:13:26+00:00"
+    },
+    {
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.60",
+      "protocol": "tcp",
+      "src_port": 52003,
+      "dst_port": 2404,
+      "ot_protocol": "iec104",
+      "packets": 1,
+      "bytes": 69,
+      "first_seen": "2023-11-14T22:13:27+00:00",
+      "last_seen": "2023-11-14T22:13:27+00:00"
+    },
+    {
+      "src_ip": "10.10.0.20",
+      "dst_ip": "10.10.0.70",
+      "protocol": "tcp",
+      "src_port": 52004,
+      "dst_port": 4840,
+      "ot_protocol": "",
+      "packets": 1,
+      "bytes": 118,
+      "first_seen": "2023-11-14T22:13:29+00:00",
+      "last_seen": "2023-11-14T22:13:29+00:00"
+    },
+    {
+      "src_ip": "10.10.0.5",
+      "dst_ip": "8.8.8.8",
+      "protocol": "tcp",
+      "src_port": 49700,
+      "dst_port": 443,
+      "ot_protocol": "",
+      "packets": 1,
+      "bytes": 57,
+      "first_seen": "2023-11-14T22:13:30+00:00",
+      "last_seen": "2023-11-14T22:13:30+00:00"
+    },
+    {
+      "src_ip": "10.10.0.10",
+      "dst_ip": "10.10.0.80",
+      "protocol": "udp",
+      "src_port": 50001,
+      "dst_port": 44818,
+      "ot_protocol": "enip",
+      "packets": 1,
+      "bytes": 126,
+      "first_seen": "2023-11-14T22:13:33+00:00",
+      "last_seen": "2023-11-14T22:13:33+00:00"
+    }
+  ],
+  "anomalies": [
+    {
+      "id": "02872ca7828a",
+      "kind": "ot_write_command",
+      "severity": "critical",
+      "title": "Comando di scrittura Modbus osservato (Write Single Register)",
+      "description": "10.10.0.130 ha inviato un comando di scrittura a Siemens (unit 1). Modbus non ha autenticazione: chiunque sulla rete puo' comandare il processo.",
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.5",
+      "evidence": "fc=6 unit=1 addr=10 qty=None",
+      "mitre_ics": "T0855 (Unauthorized Command Message)",
+      "ts": "2023-11-14T22:13:23+00:00"
+    },
+    {
+      "id": "c5798954f9cd",
+      "kind": "zone_violation",
+      "severity": "high",
+      "title": "Comando modbus dalla zona IT (Purdue 3) al campo (Purdue 1)",
+      "description": "10.10.0.130 (Office) parla modbus con 10.10.0.5 (Controllo Linea 2). In una rete segmentata correttamente questo flusso dovrebbe attraversare solo un demilitarized zone/gateway.",
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.5",
+      "evidence": "purdue 3->1",
+      "mitre_ics": "T0886 (Remote Services)",
+      "ts": "2023-11-14T22:13:23+00:00"
+    },
+    {
+      "id": "1b51b6083ee8",
+      "kind": "ot_write_command",
+      "severity": "high",
+      "title": "Comando S7 di modifica PLC osservato (Write Var)",
+      "description": "10.10.0.130 ha inviato a Siemens la funzione S7 'Write Var'. Download o stop del PLC possono interrompere la produzione.",
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.5",
+      "evidence": "function=0x05",
+      "mitre_ics": "T0843 (Program Download) / T0814 (Denial of Service)",
+      "ts": "2023-11-14T22:13:24+00:00"
+    },
+    {
+      "id": "7e1c69b8c1da",
+      "kind": "zone_violation",
+      "severity": "high",
+      "title": "Comando s7comm dalla zona IT (Purdue 3) al campo (Purdue 1)",
+      "description": "10.10.0.130 (Office) parla s7comm con 10.10.0.5 (Controllo Linea 2). In una rete segmentata correttamente questo flusso dovrebbe attraversare solo un demilitarized zone/gateway.",
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.5",
+      "evidence": "purdue 3->1",
+      "mitre_ics": "T0886 (Remote Services)",
+      "ts": "2023-11-14T22:13:24+00:00"
+    },
+    {
+      "id": "c537c9783b81",
+      "kind": "ot_write_command",
+      "severity": "critical",
+      "title": "Operazione di controllo DNP3 osservata (Direct Operate)",
+      "description": "10.10.0.130 -> 10.10.0.30: DNP3 Direct Operate. Un operate diretto puo' azionare un interruttore o una valvola.",
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.30",
+      "evidence": "function=0x05",
+      "mitre_ics": "T0855 (Unauthorized Command Message)",
+      "ts": "2023-11-14T22:13:25+00:00"
+    },
+    {
+      "id": "a1a4d82f173b",
+      "kind": "zone_violation",
+      "severity": "high",
+      "title": "Comando dnp3 dalla zona IT (Purdue 3) al campo (Purdue 1)",
+      "description": "10.10.0.130 (Office) parla dnp3 con 10.10.0.30 (Controllo Linea 2). In una rete segmentata correttamente questo flusso dovrebbe attraversare solo un demilitarized zone/gateway.",
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.30",
+      "evidence": "purdue 3->1",
+      "mitre_ics": "T0886 (Remote Services)",
+      "ts": "2023-11-14T22:13:25+00:00"
+    },
+    {
+      "id": "5513f51d5d48",
+      "kind": "ot_write_command",
+      "severity": "high",
+      "title": "Scrittura BACnet osservata",
+      "description": "10.10.0.130 -> 10.10.0.40: WriteProperty/WritePropertyMultiple su un controllore di edificio/impianto.",
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.40",
+      "evidence": "service=15",
+      "mitre_ics": "T0855 (Unauthorized Command Message)",
+      "ts": "2023-11-14T22:13:26+00:00"
+    },
+    {
+      "id": "abffc48dc6a0",
+      "kind": "zone_violation",
+      "severity": "high",
+      "title": "Comando bacnet dalla zona IT (Purdue 3) al campo (Purdue 1)",
+      "description": "10.10.0.130 (Office) parla bacnet con 10.10.0.40 (Controllo Linea 2). In una rete segmentata correttamente questo flusso dovrebbe attraversare solo un demilitarized zone/gateway.",
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.40",
+      "evidence": "purdue 3->1",
+      "mitre_ics": "T0886 (Remote Services)",
+      "ts": "2023-11-14T22:13:26+00:00"
+    },
+    {
+      "id": "f4f67404faa7",
+      "kind": "ot_write_command",
+      "severity": "critical",
+      "title": "Comando IEC 60870-5-104 osservato",
+      "description": "10.10.0.130 -> 10.10.0.60: ASDU type 45 (comando o sincronizzazione). IEC104 non autentica il mittente.",
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.60",
+      "evidence": "type_id=45 cot=3",
+      "mitre_ics": "T0855 (Unauthorized Command Message)",
+      "ts": "2023-11-14T22:13:27+00:00"
+    },
+    {
+      "id": "341d4760ff94",
+      "kind": "zone_violation",
+      "severity": "high",
+      "title": "Comando iec104 dalla zona IT (Purdue 3) al campo (Purdue 1)",
+      "description": "10.10.0.130 (Office) parla iec104 con 10.10.0.60 (Controllo Linea 2). In una rete segmentata correttamente questo flusso dovrebbe attraversare solo un demilitarized zone/gateway.",
+      "src_ip": "10.10.0.130",
+      "dst_ip": "10.10.0.60",
+      "evidence": "purdue 3->1",
+      "mitre_ics": "T0886 (Remote Services)",
+      "ts": "2023-11-14T22:13:27+00:00"
+    },
+    {
+      "id": "cf7ca5f439cd",
+      "kind": "ot_internet_egress",
+      "severity": "critical",
+      "title": "Traffico da asset industriale verso Internet",
+      "description": "10.10.0.5 (Controllo Linea 2) ha comunicato con 8.8.8.8:443 su Internet. Un PLC/HMI non deve avere egress diretto: e' il segnale tipico di C2, esfiltrazione o di un doppio NIC mal configurato.",
+      "src_ip": "10.10.0.5",
+      "dst_ip": "8.8.8.8",
+      "evidence": "proto=https dport=443",
+      "mitre_ics": "T0885 (Commonly Used Port) / T1041 (Exfiltration Over C2 Channel)",
+      "ts": "2023-11-14T22:13:30+00:00"
+    },
+    {
+      "id": "0ea7d08b5bfc",
+      "kind": "arp_conflict",
+      "severity": "high",
+      "title": "Due MAC diversi per lo stesso IP (possibile ARP spoofing)",
+      "description": "L'IP 10.10.0.1 e' stato visto con i MAC 00:80:63:aa:bb:cc oltre a 02:00:00:00:00:66. Puo' essere un IP duplicato o un attacco man-in-the-middle sulla rete di processo.",
+      "src_ip": "10.10.0.1",
+      "dst_ip": "",
+      "evidence": "mac_dominante=02:00:00:00:00:66; altri=00:80:63:aa:bb:cc",
+      "mitre_ics": "T0830 (Adversary-in-the-Middle)",
+      "ts": "2023-11-14T22:13:32+00:00"
+    }
+  ],
+  "zones": [],
+  "coverage": {
+    "mode": "passive",
+    "targets": [],
+    "interfaces": [],
+    "packets_analyzed": 18,
+    "hosts_discovered": 11,
+    "hosts_fingerprinted": 0,
+    "open_ports_found": 1,
+    "protocols_identified": [],
+    "checks_run": [
+      "ot_protocol_exposure",
+      "ot_write_capability",
+      "engineering_access",
+      "it_services_in_ot",
+      "cleartext_management",
+      "snmp_default_community",
+      "unauthenticated_hmi",
+      "eol_operating_system",
+      "firmware_unknown",
+      "ot_internet_egress",
+      "ot_write_observed",
+      "arp_spoofing",
+      "unauthorized_discovery",
+      "zone_violation",
+      "dns_tunneling",
+      "flat_network",
+      "baseline_drift",
+      "broadcast_storm",
+      "unknown_ot_assets",
+      "opcua_security",
+      "duplicate_addressing"
+    ],
+    "checks_skipped": [],
+    "limitations": []
+  },
+  "engine": {},
+  "baseline_diff": {},
+  "stats": {
+    "assets": 11,
+    "ot_assets": 6,
+    "findings": 20,
+    "anomalies": 12,
+    "conversations": 10,
+    "critical": 13,
+    "high": 5
+  }
+}

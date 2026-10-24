@@ -1,0 +1,13 @@
+product: CyberShield AI Real Pro
+version: 0.3.0-final
+models:
+  binary: models/cybershield_realpro_binary_ensemble_v0_3.joblib
+  family: models/cybershield_realpro_attack_family_v0_3.joblib
+  anomaly: models/cybershield_realpro_anomaly_baseline_v0_3.joblib
+runtime:
+  api_port: 8919
+  default_ot_ics_safe_mode: true
+thresholds:
+  medium: 25
+  high: 55
+  critical: 80

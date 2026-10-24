@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "data_sha256": "371aafb74a9174a98b0081d56d0570b3e081848d2259d44679297a6aa3b8786d",
+  "models_checked": 3,
+  "prediction_rows": 20
+}
+
+STDERR:

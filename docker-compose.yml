@@ -1,0 +1,77 @@
+version: "3.8"
+
+# Cybersecurity-AEGIS — Infrastructure Stack (Fase 1)
+# Avvia: docker compose up -d
+# Nota: network_mode: host funziona su Linux/WSL2. Su Windows Docker Desktop
+# nativo, usare WSL2 backend o configurare npcap per Suricata/Zeek.
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: aegis-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: aegis-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aegis
+      POSTGRES_PASSWORD: aegis
+      POSTGRES_DB: aegis
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+
+  suricata:
+    image: jasonish/suricata:latest
+    container_name: aegis-suricata
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      - SURICATA_INTERFACE=${SURICATA_INTERFACE:-eth0}
+    volumes:
+      - ./config/suricata/rules:/etc/suricata/rules:ro
+      - suricata-logs:/var/log/suricata
+    command: ["-i", "${SURICATA_INTERFACE:-eth0}", "--set", "outputs.1.eve-log.enabled=yes"]
+
+  zeek:
+    image: zeek/zeek:latest
+    container_name: aegis-zeek
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      - ZEEK_INTERFACE=${ZEEK_INTERFACE:-eth0}
+    volumes:
+      - zeek-logs:/usr/local/zeek/logs
+    command: ["-i", "${ZEEK_INTERFACE:-eth0}", "local"]
+
+  # Optional: lightweight syslog collector for OT/ICS UDP 514
+  syslog-ng:
+    image: balabit/syslog-ng:latest
+    container_name: aegis-syslog
+    restart: unless-stopped
+    ports:
+      - "514:514/udp"
+      - "514:514/tcp"
+    volumes:
+      - ./config/syslog-ng/syslog-ng.conf:/etc/syslog-ng/syslog-ng.conf:ro
+      - syslog-logs:/var/log
+
+volumes:
+  redis-data:
+  pg-data:
+  suricata-logs:
+  zeek-logs:
+  syslog-logs:

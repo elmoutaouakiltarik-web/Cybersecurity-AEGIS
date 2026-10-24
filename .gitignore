@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Binary / compiled
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Reports generated at runtime
+*.jsonl
+
+# Docker
+.dockerinit
+
+# Environment (the .env.example is kept for reference)
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.sbd/
+
+# Runtime artifacts (logs, caches, local databases, builds)
+logs/
+*.log
+*.exe~
+*.bak
+.pytest_cache/
+.ruff_cache/
+_extracted_cybershield/
+.pi/
+.playwright-mcp/
+.freebuff/
+*.db
+*.sqlite
+pki_data/
+data/pki/
+compliance_data/
+dfir_data/
+evidence_store/

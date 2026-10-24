@@ -1,0 +1,101 @@
+---
+# Cybersecurity-AEGIS SOAR Playbook: Ransomware Incident Response
+# PB-RANSOM-001
+id: PB-RANSOM-001
+name: Ransomware Incident Response
+description: |
+  Multi-stage ransomware incident response playbook.
+  Stage 1: Immediate containment (log, alert, tag, optional isolation)
+  Stage 2: Preservation (evidence collection advisory, ticket creation)
+  Stage 3: Notification (SOC, management, GDPR if personal data affected)
+  OT SAFETY: If ransomware reaches OT network, advisory-only response.
+  Active isolation on IT networks requires human confirmation.
+version: "2.0"
+dry_run: true
+ot_safe: true
+enabled: true
+
+severity_filter:
+  - critical
+
+category_filter:
+  - endpoint
+  - network
+  - identity
+
+trigger_conditions:
+  - title_contains:
+      - ransom
+      - encrypted files
+      - vssadmin delete
+      - shadow copy
+      - wbadmin
+
+actions:
+  - type: log
+    description: "Audit log: Ransomware indicator detected"
+    params:
+      message: "RANSOMWARE INDICATOR — Immediate SOC escalation required"
+      severity: critical
+      ot_event: false
+
+  - type: tag_event
+    description: "Tag event as ransomware candidate"
+    params:
+      tags:
+        - ransomware
+        - critical_incident
+        - containment_required
+        - evidence_preserve
+
+  - type: enrich
+    description: "Threat intel enrichment on source IP"
+    params:
+      check_threat_intel: true
+      check_geo: true
+      check_abuseipdb: true
+
+  - type: send_alert
+    description: "Immediate SOC notification — escalate to CISO"
+    params:
+      channel: soc_email
+      priority: critical
+      subject: "CRITICAL — AEGIS: Ransomware Indicator on {{hostname}}"
+      body: |
+        Ransomware behavioral indicator detected.
+        Host: {{hostname}} / {{source_ip}}
+        Event: {{title}}
+        Time: {{timestamp}}
+        IMMEDIATE ACTION REQUIRED — Do not pay ransom before full investigation.
+
+  - type: isolate_host
+    description: "Network isolation advisory (confirmation required)"
+    on_failure: continue
+    params:
+      target: "{{source_ip}}"
+      method: firewall_quarantine
+      note: "Isolation advisory — OT EXCLUDED. IT host isolation requires SOC approval."
+      require_approval: true
+
+  - type: create_ticket
+    description: "Create Priority 1 incident ticket"
+    params:
+      severity: critical
+      team: security
+      title: "P1 RANSOMWARE: {{title}} — {{source_ip}}"
+      priority: P1
+      tags:
+        - ransomware
+        - p1_incident
+        - ciso_notification
+      playbook_link: PB-RANSOM-001
+
+  - type: log
+    description: "GDPR breach assessment advisory"
+    params:
+      message: |
+        GDPR ASSESSMENT REQUIRED:
+        If ransomware encrypted personal data, GDPR Art.33 requires
+        DPA notification within 72 hours of becoming aware.
+        Contact DPO immediately for risk assessment.
+      ot_event: false

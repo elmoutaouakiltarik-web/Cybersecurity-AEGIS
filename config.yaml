@@ -1,0 +1,137 @@
+# Cybersecurity-AEGIS Unified Configuration
+# =========================================
+# Single source of truth for all modules: orchestrator, agents, ML, endpoint, network, dashboard
+# Environment variables override these values (prefix: AEGIS_)
+
+orchestrator:
+  bind: "0.0.0.0:8080"
+  auth_required: true
+  api_key: ""                          # Generate: openssl rand -hex 32
+  session_ttl_hours: 24
+  admin_user: "admin"
+  admin_password: ""                   # Generate strong password
+  postgres_dsn: "postgres://aegis:aegis@postgres:5432/aegis?sslmode=disable"
+  redis_addr: "redis:6379"
+  sigma_dir: "data/sigma"
+  evidence_dir: "data/evidence"
+  pki_dir: "data/pki"
+  ioc_cache_dir: "data/iocs"
+  kev_cache_dir: "data/kev"
+  log_level: "info"
+  cors_origins:
+    - "http://localhost:8080"
+    - "http://127.0.0.1:8080"
+    - "http://localhost:3000"
+  rate_limit:
+    enabled: true
+    requests_per_minute: 120
+    burst: 20
+
+ml:
+  api_port: 8919
+  bind_host: "0.0.0.0"
+  binary_model: "models/cybershield_realpro_binary_ensemble_v0_3.joblib"
+  family_model: "models/cybershield_realpro_attack_family_v0_3.joblib"
+  anomaly_model: "models/cybershield_realpro_anomaly_baseline_v0_3.joblib"
+  ot_safe_mode: true
+  model_config: "configs/model_config.yaml"
+  training_report: "reports/training_report_v0_3.json"
+  drift_detection:
+    enabled: true
+    threshold: 0.1
+    check_interval_hours: 24
+
+endpoint:
+  bind_host: "127.0.0.1"
+  api_port: 8088
+  yara_rules_dir: "modules/intelligence/yara/rules"
+  hash_db: ""
+  use_defender: true
+  ingest_enabled: true
+  orchestrator_url: "http://orchestrator:8080"
+  realtime_interval_sec: 15
+  sigma_live_interval_sec: 60
+  ioc_freshness_hours: 12
+  honeypot_bind: "127.0.0.1"
+
+network:
+  bind_host: "0.0.0.0"
+  api_port: 8081
+  interface: "eth0"
+  simulate: true
+  baseline_days: 7
+  alert_threshold: 3.0
+  orchestrator_url: "http://orchestrator:8080"
+  authorized_assets:
+    - ip: "192.168.10.10"
+      name: "demo-plc-1"
+      purdue_level: 1
+      protocols: ["modbus"]
+    - ip: "192.168.10.20"
+      name: "demo-hmi-1"
+      purdue_level: 2
+      protocols: ["opc_ua"]
+  passive_protocols:
+    modbus:
+      enabled: true
+      port: 502
+    dnp3:
+      enabled: true
+      port: 20000
+    iec61850_mms:
+      enabled: false
+      port: 102
+    opc_ua:
+      enabled: true
+      port: 4840
+
+agent:
+  orchestrator_url: "http://orchestrator:8080"
+  interval_sec: 30
+  batch_size: 100
+  use_yara: true
+  use_clamav: false
+  include_hashes: true
+
+notifications:
+  slack_webhook: ""
+  telegram_token: ""
+  telegram_chat_id: ""
+  min_severity: "high"
+  cooldown_sec: 300
+
+dashboard:
+  theme: "dark"
+  auto_refresh_sec: 30
+  chart_retention_points: 100
+  websocket_enabled: true
+
+tls:
+  enabled: false
+  cert_file: "certs/server.pem"
+  key_file: "certs/server.key"
+  ca_file: "certs/ca.pem"
+  mtls:
+    enabled: false
+    client_ca_file: "certs/client-ca.pem"
+
+observability:
+  prometheus:
+    enabled: true
+    port: 9090
+    path: "/metrics"
+  grafana:
+    enabled: true
+    port: 3000
+    admin_user: "admin"
+    admin_password: "admin"
+  loki:
+    enabled: true
+    port: 3100
+  tempo:
+    enabled: true
+    port: 3200
+  otel:
+    enabled: true
+    collector_port: 4317
+    exporter: "otlp"

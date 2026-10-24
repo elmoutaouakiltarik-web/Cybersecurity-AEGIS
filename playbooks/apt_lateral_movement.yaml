@@ -1,0 +1,97 @@
+---
+# Cybersecurity-AEGIS SOAR Playbook: APT Lateral Movement Response
+# PB-APT-001
+id: PB-APT-001
+name: APT Lateral Movement Containment
+description: |
+  Response to advanced persistent threat lateral movement indicators.
+  Correlates: credential dump, remote service abuse, internal recon.
+  Maps to MITRE ATT&CK TA0008 Lateral Movement.
+  WARNING: Do NOT isolate hosts without confirming with asset owner.
+version: "1.0"
+dry_run: true
+ot_safe: true
+enabled: true
+
+severity_filter:
+  - high
+  - critical
+
+category_filter:
+  - network
+  - endpoint
+  - identity
+
+trigger_conditions:
+  - title_contains:
+      - lateral movement
+      - remote services
+      - pass the hash
+      - mimikatz
+      - psexec
+      - wmiexec
+      - cobalt strike
+
+actions:
+  - type: log
+    description: "Audit log: APT lateral movement indicator"
+    params:
+      message: "Lateral movement pattern detected — multi-host investigation required"
+
+  - type: enrich
+    description: "Full enrichment: TI + geo + reverse DNS"
+    params:
+      check_threat_intel: true
+      check_geo: true
+      check_rdns: true
+      check_asn: true
+
+  - type: tag_event
+    description: "Tag for APT hunting"
+    params:
+      tags:
+        - apt_indicator
+        - lateral_movement
+        - T1021
+        - hunt_required
+
+  - type: send_alert
+    description: "Alert threat hunting team"
+    params:
+      channel: soc_email
+      priority: high
+      subject: "AEGIS: APT Lateral Movement — {{source_ip}} → {{destination_ip}}"
+      body: |
+        Lateral movement indicators detected.
+        Source: {{source_ip}}
+        Destination: {{destination_ip}}
+        Technique: {{mitre_technique_id}}
+        Evidence: {{title}}
+        Recommend: Run threat hunt query T1021 across all Windows hosts.
+
+  - type: block_ip_firewall
+    description: "Temporary east-west block (requires SOC confirmation)"
+    on_failure: continue
+    params:
+      target: "{{source_ip}}"
+      duration_min: 120
+      scope: east_west
+      require_approval: true
+      note: "East-west traffic block — verify business impact before applying"
+
+  - type: create_ticket
+    description: "Create APT investigation ticket"
+    params:
+      severity: high
+      team: threat_hunting
+      title: "APT Investigation: Lateral Movement from {{source_ip}}"
+      tags:
+        - apt
+        - lateral_movement
+        - threat_hunt
+      investigation_steps:
+        - "Collect event logs from source host {{source_ip}}"
+        - "Check scheduled tasks and services for persistence"
+        - "Run Velociraptor artifact: Windows.EventLogs.Evtx"
+        - "Check for LOLBin usage: psexec, wmiexec, schtasks"
+        - "Validate all privileged session activity in last 48h"

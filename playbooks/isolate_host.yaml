@@ -1,0 +1,60 @@
+---
+# Cybersecurity-AEGIS SOAR Playbook: Isolate Host
+# PB-NET-002
+id: PB-NET-002
+name: Isolate Compromised Host
+description: |
+  Network-level isolation of a host showing signs of compromise.
+  Advisory-only by default — isolation requires explicit confirmation.
+  Never used on OT/ICS hosts; OT events route to ot_advisory only.
+version: "1.0"
+dry_run: true
+ot_safe: true
+enabled: true
+
+severity_filter:
+  - critical
+
+trigger_conditions:
+  - severity: [critical]
+
+actions:
+  - type: log
+    description: "Audit log: host isolation requested"
+    params:
+      message: "Host isolation playbook triggered for {{destination_ip}}"
+
+  - type: enrich
+    description: "Full host enrichment before isolation"
+    params:
+      check_threat_intel: true
+      correlate_siem: true
+      asset_lookup: true
+
+  - type: send_alert
+    description: "Alert SOC + IR team"
+    params:
+      channel: pagerduty
+      priority: critical
+      message: "Possible host compromise. Isolation pending SOC approval: {{destination_ip}}"
+
+  - type: create_ticket
+    description: "Open incident ticket"
+    params:
+      severity: critical
+      team: incident_response
+      title: "Potential host compromise: {{destination_ip}}"
+      sla_hours: 1
+
+  - type: isolate_host
+    description: "Isolate host (SOC confirmation required in production)"
+    on_failure: stop
+    params:
+      target: "{{destination_ip}}"
+      reason: "Automated isolation — critical incident"
+      rollback_after_hours: 4
+
+  - type: update_status
+    description: "Update event status to investigating"
+    params:
+      status: investigating

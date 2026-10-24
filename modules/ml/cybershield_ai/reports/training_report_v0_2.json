@@ -1,0 +1,535 @@
+{
+  "binary": {
+    "model_name": "CyberShield-Pro-NSL-KDD-Binary-Ensemble-v0.2",
+    "dataset": "NSL-KDD real subset from provided base artifact",
+    "dataset_sha256": "371aafb74a9174a98b0081d56d0570b3e081848d2259d44679297a6aa3b8786d",
+    "rows_total": 122,
+    "features_total": 41,
+    "categorical_features": [
+      "protocol_type",
+      "service",
+      "flag"
+    ],
+    "numeric_features_count": 38,
+    "classes": [
+      "ATTACK",
+      "BENIGN"
+    ],
+    "class_distribution_total": {
+      "ATTACK": 70,
+      "BENIGN": 52
+    },
+    "holdout_rows_train": 91,
+    "holdout_rows_test": 31,
+    "holdout_accuracy": 0.9354838709677419,
+    "holdout_balanced_accuracy": 0.9444444444444444,
+    "holdout_macro_f1": 0.9348739495798319,
+    "holdout_weighted_f1": 0.9358904852263487,
+    "holdout_roc_auc_binary": 0.9957264957264957,
+    "holdout_classification_report": {
+      "ATTACK": {
+        "precision": 1.0,
+        "recall": 0.8888888888888888,
+        "f1-score": 0.9411764705882353,
+        "support": 18.0
+      },
+      "BENIGN": {
+        "precision": 0.8666666666666667,
+        "recall": 1.0,
+        "f1-score": 0.9285714285714286,
+        "support": 13.0
+      },
+      "accuracy": 0.9354838709677419,
+      "macro avg": {
+        "precision": 0.9333333333333333,
+        "recall": 0.9444444444444444,
+        "f1-score": 0.9348739495798319,
+        "support": 31.0
+      },
+      "weighted avg": {
+        "precision": 0.9440860215053763,
+        "recall": 0.9354838709677419,
+        "f1-score": 0.9358904852263487,
+        "support": 31.0
+      }
+    },
+    "holdout_confusion_matrix_labels": [
+      "ATTACK",
+      "BENIGN"
+    ],
+    "holdout_confusion_matrix": [
+      [
+        16,
+        2
+      ],
+      [
+        0,
+        13
+      ]
+    ],
+    "cross_validation": {
+      "n_splits": 5,
+      "accuracy_mean": 0.967,
+      "accuracy_std": 0.031098410105841613,
+      "balanced_accuracy_mean": 0.9694805194805195,
+      "balanced_accuracy_std": 0.027518987143398805,
+      "macro_f1_mean": 0.966540994127201,
+      "macro_f1_std": 0.0313726746839113,
+      "weighted_f1_mean": 0.9671080966713153,
+      "weighted_f1_std": 0.030910023218405466
+    },
+    "top_permutation_features_directional": [
+      {
+        "feature": "flag",
+        "importance_mean": 0.03328664799253045,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "same_srv_rate",
+        "importance_mean": -0.03232181761593522,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "dst_host_serror_rate",
+        "importance_mean": -0.03232181761593522,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "src_bytes",
+        "importance_mean": 0.03205263296541183,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "dst_host_srv_count",
+        "importance_mean": -0.015919701213818804,
+        "importance_std": 0.049206349206349254
+      },
+      {
+        "feature": "serror_rate",
+        "importance_mean": 0.0011132658191481681,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "srv_serror_rate",
+        "importance_mean": 0.0011132658191481681,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "dst_host_srv_serror_rate",
+        "importance_mean": 0.0011132658191481681,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "service",
+        "importance_mean": 0.0005566329095740841,
+        "importance_std": 0.0005566329095740841
+      },
+      {
+        "feature": "count",
+        "importance_mean": 0.00048241518829761354,
+        "importance_std": 0.032804232804232836
+      },
+      {
+        "feature": "duration",
+        "importance_mean": 0.0,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "protocol_type",
+        "importance_mean": 0.0,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "dst_bytes",
+        "importance_mean": 0.0,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "land",
+        "importance_mean": 0.0,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "wrong_fragment",
+        "importance_mean": 0.0,
+        "importance_std": 0.0
+      }
+    ],
+    "limitations": [
+      "Real data was used, but the embedded subset is small; do not represent it as production-trained on the full NSL-KDD corpus.",
+      "Retrain on the complete KDDTrain+.txt/csv and validate on KDDTest+.txt/csv before production.",
+      "Also test on CIC-IDS2017, UNSW-NB15 and TON_IoT for stronger generalization.",
+      "No automatic destructive action on OT/ICS; alert-only/human approval by default."
+    ]
+  },
+  "family": {
+    "model_name": "CyberShield-Pro-NSL-KDD-Family-ExtraTrees-v0.2",
+    "dataset": "NSL-KDD real subset from provided base artifact",
+    "dataset_sha256": "371aafb74a9174a98b0081d56d0570b3e081848d2259d44679297a6aa3b8786d",
+    "rows_total": 122,
+    "features_total": 41,
+    "categorical_features": [
+      "protocol_type",
+      "service",
+      "flag"
+    ],
+    "numeric_features_count": 38,
+    "classes": [
+      "BENIGN",
+      "DoS",
+      "Probe",
+      "R2L"
+    ],
+    "class_distribution_total": {
+      "BENIGN": 52,
+      "DoS": 49,
+      "Probe": 13,
+      "R2L": 8
+    },
+    "holdout_rows_train": 91,
+    "holdout_rows_test": 31,
+    "holdout_accuracy": 1.0,
+    "holdout_balanced_accuracy": 1.0,
+    "holdout_macro_f1": 1.0,
+    "holdout_weighted_f1": 1.0,
+    "holdout_roc_auc_binary": null,
+    "holdout_classification_report": {
+      "BENIGN": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 13.0
+      },
+      "DoS": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 13.0
+      },
+      "Probe": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 3.0
+      },
+      "R2L": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 2.0
+      },
+      "accuracy": 1.0,
+      "macro avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 31.0
+      },
+      "weighted avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 31.0
+      }
+    },
+    "holdout_confusion_matrix_labels": [
+      "BENIGN",
+      "DoS",
+      "Probe",
+      "R2L"
+    ],
+    "holdout_confusion_matrix": [
+      [
+        13,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        13,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        3,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        2
+      ]
+    ],
+    "cross_validation": {
+      "n_splits": 5,
+      "accuracy_mean": 0.9353333333333333,
+      "accuracy_std": 0.06005923002429445,
+      "balanced_accuracy_mean": 0.9011111111111111,
+      "balanced_accuracy_std": 0.12414646865300819,
+      "macro_f1_mean": 0.8912301587301588,
+      "macro_f1_std": 0.12445803395997851,
+      "weighted_f1_mean": 0.932336507936508,
+      "weighted_f1_std": 0.0595907757906779
+    },
+    "top_permutation_features_directional": [
+      {
+        "feature": "service",
+        "importance_mean": 0.09259259259259267,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "hot",
+        "importance_mean": 0.09259259259259267,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "is_guest_login",
+        "importance_mean": 0.09259259259259267,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "logged_in",
+        "importance_mean": 0.046296296296296335,
+        "importance_std": 0.046296296296296335
+      },
+      {
+        "feature": "src_bytes",
+        "importance_mean": 0.04571428571428571,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "same_srv_rate",
+        "importance_mean": 0.04571428571428571,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "dst_host_diff_srv_rate",
+        "importance_mean": 0.04571428571428571,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "dst_host_same_src_port_rate",
+        "importance_mean": 0.022857142857142854,
+        "importance_std": 0.022857142857142854
+      },
+      {
+        "feature": "duration",
+        "importance_mean": 0.0,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "protocol_type",
+        "importance_mean": 0.0,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "flag",
+        "importance_mean": 0.0,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "dst_bytes",
+        "importance_mean": 0.0,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "land",
+        "importance_mean": 0.0,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "wrong_fragment",
+        "importance_mean": 0.0,
+        "importance_std": 0.0
+      },
+      {
+        "feature": "urgent",
+        "importance_mean": 0.0,
+        "importance_std": 0.0
+      }
+    ],
+    "limitations": [
+      "Real data was used, but the embedded subset is small; do not represent it as production-trained on the full NSL-KDD corpus.",
+      "Retrain on the complete KDDTrain+.txt/csv and validate on KDDTest+.txt/csv before production.",
+      "Also test on CIC-IDS2017, UNSW-NB15 and TON_IoT for stronger generalization.",
+      "No automatic destructive action on OT/ICS; alert-only/human approval by default."
+    ]
+  },
+  "anomaly": {
+    "model_name": "CyberShield-Pro-NSL-KDD-Benign-Baseline-IsolationForest-v0.2",
+    "dataset": "NSL-KDD real subset from provided base artifact",
+    "dataset_sha256": "371aafb74a9174a98b0081d56d0570b3e081848d2259d44679297a6aa3b8786d",
+    "trained_on_rows": 52,
+    "training_policy": "trained only on rows labeled BENIGN/normal from real subset",
+    "score_mean_all_rows": -0.006162210687188075,
+    "score_min_all_rows": -0.1912487234257555,
+    "score_max_all_rows": 0.17279326447049909,
+    "predicted_anomalous_all_rows": 57,
+    "predicted_anomalous_by_binary_label": {
+      "ANOMALOUS": {
+        "ATTACK": 49,
+        "BENIGN": 8
+      },
+      "BENIGN_LIKE": {
+        "ATTACK": 21,
+        "BENIGN": 44
+      }
+    },
+    "limitations": [
+      "Anomaly model is a baseline only; tune contamination/threshold per customer network."
+    ]
+  },
+  "schema": {
+    "dataset": "NSL-KDD 41-feature schema",
+    "feature_columns": [
+      "duration",
+      "protocol_type",
+      "service",
+      "flag",
+      "src_bytes",
+      "dst_bytes",
+      "land",
+      "wrong_fragment",
+      "urgent",
+      "hot",
+      "num_failed_logins",
+      "logged_in",
+      "num_compromised",
+      "root_shell",
+      "su_attempted",
+      "num_root",
+      "num_file_creations",
+      "num_shells",
+      "num_access_files",
+      "num_outbound_cmds",
+      "is_host_login",
+      "is_guest_login",
+      "count",
+      "srv_count",
+      "serror_rate",
+      "srv_serror_rate",
+      "rerror_rate",
+      "srv_rerror_rate",
+      "same_srv_rate",
+      "diff_srv_rate",
+      "srv_diff_host_rate",
+      "dst_host_count",
+      "dst_host_srv_count",
+      "dst_host_same_srv_rate",
+      "dst_host_diff_srv_rate",
+      "dst_host_same_src_port_rate",
+      "dst_host_srv_diff_host_rate",
+      "dst_host_serror_rate",
+      "dst_host_srv_serror_rate",
+      "dst_host_rerror_rate",
+      "dst_host_srv_rerror_rate"
+    ],
+    "categorical_columns": [
+      "protocol_type",
+      "service",
+      "flag"
+    ],
+    "numeric_columns": [
+      "duration",
+      "src_bytes",
+      "dst_bytes",
+      "land",
+      "wrong_fragment",
+      "urgent",
+      "hot",
+      "num_failed_logins",
+      "logged_in",
+      "num_compromised",
+      "root_shell",
+      "su_attempted",
+      "num_root",
+      "num_file_creations",
+      "num_shells",
+      "num_access_files",
+      "num_outbound_cmds",
+      "is_host_login",
+      "is_guest_login",
+      "count",
+      "srv_count",
+      "serror_rate",
+      "srv_serror_rate",
+      "rerror_rate",
+      "srv_rerror_rate",
+      "same_srv_rate",
+      "diff_srv_rate",
+      "srv_diff_host_rate",
+      "dst_host_count",
+      "dst_host_srv_count",
+      "dst_host_same_srv_rate",
+      "dst_host_diff_srv_rate",
+      "dst_host_same_src_port_rate",
+      "dst_host_srv_diff_host_rate",
+      "dst_host_serror_rate",
+      "dst_host_srv_serror_rate",
+      "dst_host_rerror_rate",
+      "dst_host_srv_rerror_rate"
+    ],
+    "label_columns": [
+      "label",
+      "difficulty",
+      "binary_label",
+      "attack_family"
+    ],
+    "attack_family_mapping": {
+      "DoS": [
+        "apache2",
+        "back",
+        "land",
+        "mailbomb",
+        "neptune",
+        "pod",
+        "processtable",
+        "smurf",
+        "teardrop",
+        "udpstorm",
+        "worm"
+      ],
+      "Probe": [
+        "ipsweep",
+        "mscan",
+        "nmap",
+        "portsweep",
+        "saint",
+        "satan"
+      ],
+      "R2L": [
+        "ftp_write",
+        "guess_passwd",
+        "httptunnel",
+        "imap",
+        "multihop",
+        "named",
+        "phf",
+        "sendmail",
+        "snmpgetattack",
+        "snmpguess",
+        "spy",
+        "warezclient",
+        "warezmaster",
+        "xlock",
+        "xsnoop"
+      ],
+      "U2R": [
+        "buffer_overflow",
+        "loadmodule",
+        "perl",
+        "ps",
+        "rootkit",
+        "sqlattack",
+        "xterm"
+      ],
+      "BENIGN": [
+        "normal"
+      ]
+    }
+  }
+}

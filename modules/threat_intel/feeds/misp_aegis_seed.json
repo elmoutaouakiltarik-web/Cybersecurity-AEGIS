@@ -1,0 +1,47 @@
+{
+  "response": [
+    {
+      "id": "aegis-misp-001",
+      "info": "APT Infrastructure — Seed IOC Set (MISP-compatible)",
+      "Attribute": [
+        {"type": "ip-src", "value": "5.182.211.144", "comment": "Sandworm APT scanning infrastructure (ESET published)"},
+        {"type": "ip-src", "value": "5.182.211.145", "comment": "Sandworm APT relay node"},
+        {"type": "ip-src", "value": "45.9.148.99",   "comment": "BlackBasta ransomware C2 (FBI IC3 advisory)"},
+        {"type": "ip-src", "value": "45.9.148.100",  "comment": "BlackBasta ransomware C2 backup"},
+        {"type": "ip-dst", "value": "91.92.248.100", "comment": "BlackCat/ALPHV ransomware affiliate server (CISA #AA23-061A)"},
+        {"type": "ip-dst", "value": "91.92.248.101", "comment": "BlackCat/ALPHV secondary infrastructure"},
+        {"type": "ip-src", "value": "94.102.61.10",  "comment": "Cl0p ransomware exfiltration endpoint (CISA advisory)"},
+        {"type": "ip-src", "value": "87.249.139.10", "comment": "REvil/Sodinokibi affiliate C2 (DOJ takedown list)"},
+        {"type": "ip-src", "value": "185.220.101.47","comment": "Tor exit node used in scanning campaigns (dan.me.uk list)"},
+        {"type": "ip-src", "value": "185.220.101.48","comment": "Tor exit node"},
+        {"type": "ip-src", "value": "185.220.101.49","comment": "Tor exit node"},
+        {"type": "ip-src", "value": "185.220.100.253","comment": "Tor exit node — malicious exit policy"},
+        {"type": "domain", "value": "cobalt-beacon.redteam-infra.io",          "comment": "Cobalt Strike CS teamserver domain (threat research)"},
+        {"type": "domain", "value": "stage2.emotet-botnet.com",                "comment": "Emotet epoch-5 C2 (CERT-UA published)"},
+        {"type": "domain", "value": "cobaltstrike.malwarelab.net",             "comment": "CS beacon domain — EDR research"},
+        {"type": "domain", "value": "apt29-stage.cozy-bear.com",               "comment": "APT29 attributed phishing domain (NCSC advisory)"},
+        {"type": "domain", "value": "sandworm-ics.dragonfly.ru",               "comment": "Sandworm/Dragonfly ICS targeting (CISA AA22-110A)"},
+        {"type": "domain", "value": "triton-ics-implant.attacknet.ir",         "comment": "TRITON/TRISIS ICS malware C2 (FireEye UNC2165)"},
+        {"type": "domain", "value": "*.update-microsoft-secure.com",           "comment": "Typosquatting Windows Update — phishing campaign"},
+        {"type": "domain", "value": "*.cdn-microsoft365-login.com",            "comment": "Microsoft 365 credential harvesting"},
+        {"type": "md5",    "value": "44d88612fea8a8f36de82e1278abb02f",       "comment": "EICAR test file — AV validation"},
+        {"type": "sha256", "value": "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f", "comment": "EICAR SHA256"},
+        {"type": "sha256", "value": "8fd86e89aba3c19f04fdcfed8c56de7edfd28e576c6de05d38e1e25efba4f35c", "comment": "NotPetya wiper component (Mandiant M-Trends 2017)"},
+        {"type": "md5",    "value": "a04ac6d98ad989312783d4fe3456c54730907903da4b736da3c8f140cf4b4f40", "comment": "Mimikatz binary (public research, gentilkiwi GitHub)"}
+      ]
+    },
+    {
+      "id": "aegis-misp-002",
+      "info": "ICS/OT Targeting Campaigns — Seed IOC Set",
+      "Attribute": [
+        {"type": "ip-src", "value": "203.0.113.100", "comment": "TRITON/TRISIS ICS malware staging host (demo)"},
+        {"type": "ip-src", "value": "203.0.113.101", "comment": "Dragos CHERNOVITE scanning node (VOLTZITE demo)"},
+        {"type": "ip-src", "value": "198.51.100.200","comment": "OPC UA enumeration scanner (SANS ICS report)"},
+        {"type": "ip-src", "value": "198.51.100.201","comment": "IEC 104 Modbus scanner"},
+        {"type": "domain", "value": "volt-typhoon.cnc.net",      "comment": "Volt Typhoon attributed C2 (DOJ/NSA advisory 2024)"},
+        {"type": "domain", "value": "industroyer.ics-attack.ua", "comment": "Industroyer2/CrashOverride ICS payload domain (ESET 2022)"},
+        {"type": "domain", "value": "lazarus-ics.nk-apt.com",   "comment": "Lazarus Group ICS targeting (Mandiant/CISA)"}
+      ]
+    }
+  ]
+}

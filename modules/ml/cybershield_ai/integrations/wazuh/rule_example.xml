@@ -1,0 +1,8 @@
+<group name="cybershield_ai,ids,ml,">
+  <rule id="100300" level="10">
+    <decoded_as>json</decoded_as>
+    <field name="source">cybershield_ai_real_pro</field>
+    <field name="risk_level">high|critical</field>
+    <description>CyberShield AI Real Pro high risk prediction</description>
+  </rule>
+</group>

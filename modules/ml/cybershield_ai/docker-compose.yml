@@ -1,0 +1,10 @@
+services:
+  cybershield-ai-real-pro:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8919:8919"
+    volumes:
+      - ./models:/app/models:ro
+      - ./reports:/app/reports
