@@ -1,42 +1,3 @@
-Cybersecurity-AEGIS
-==================
-
-Copyright (C) 2026 El Moutaouakil Tarik
-All rights reserved.
-
-
-OWNERSHIP
-
-Cybersecurity-AEGIS, including its source code, documentation, architecture,
-detection content and visual identity, is the original work and the exclusive
-property of El Moutaouakil Tarik, the author and sole copyright holder.
-
-This license grants you a right of use. It does not transfer ownership, assign
-copyright, or grant any title to the Software or to any part of it. El
-Moutaouakil Tarik retains all rights not expressly granted here.
-
-Attribution to the author must be preserved in every copy, fork and derivative
-work, together with this notice and the Commons Clause condition below.
-
-
-LICENSE
-
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU Affero General Public License as published by the Free
-Software Foundation, either version 3 of the License, or (at your option) any
-later version, SUBJECT TO the Commons Clause License Condition v1.0 reproduced
-at the end of this file.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-
-The complete text of the GNU Affero General Public License version 3 follows.
-A copy is also kept at LICENSES/AGPL-3.0.txt.
-
-------------------------------------------------------------------------------
-
-
                     GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
 
@@ -700,10 +661,34 @@ For more information on this, and how to apply and follow the GNU AGPL, see
 <https://www.gnu.org/licenses/>.
 
 
-------------------------------------------------------------------------------
+==============================================================================
+ADDITIONAL TERMS — Cybersecurity-AEGIS
+==============================================================================
 
-Commons Clause License Condition v1.0
-=====================================
+Copyright (C) 2026 El Moutaouakil Tarik
+All rights reserved.
+
+The Software is licensed under the GNU Affero General Public License, version 3
+or later, as reproduced in full above, together with the additional terms
+below. In case of conflict between these additional terms and the AGPL, these
+additional terms prevail to the extent permitted by the AGPL.
+
+
+1. OWNERSHIP
+
+Cybersecurity-AEGIS, including its source code, documentation, architecture,
+detection content and visual identity, is the original work and the exclusive
+property of El Moutaouakil Tarik, the author and sole copyright holder.
+
+This license grants a right of use. It does not transfer ownership, assign
+copyright or grant title to the Software or to any part of it. El Moutaouakil
+Tarik retains all rights not expressly granted here.
+
+Attribution to the author must be preserved in every copy, fork and derivative
+work, together with this notice and the Commons Clause condition below.
+
+
+2. COMMONS CLAUSE LICENSE CONDITION v1.0
 
 The Software is provided to you by the Licensor under the License, as defined
 below, subject to the following condition.
@@ -721,11 +706,12 @@ Software. Any license notice or attribution required by the License must also
 include this Commons Clause License Condition notice.
 
 Software: Cybersecurity-AEGIS
-License:  GNU Affero General Public License v3.0 or later
+License:  GNU Affero General Public License v3.0 or later, with the Commons
+          Clause License Condition v1.0
 Licensor: El Moutaouakil Tarik
 
 
-COMMERCIAL LICENSING
+3. COMMERCIAL LICENSING
 
 Redistribution, OEM embedding, MSP multi-tenant deployment, or any use that
 falls under the Commons Clause restriction requires a separate written
