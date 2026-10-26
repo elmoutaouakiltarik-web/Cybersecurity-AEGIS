@@ -8,44 +8,85 @@ import (
 	"strings"
 )
 
+// ingestKeyHeader carries the shared secret used by first-party collectors
+// (Python modules, the local agent and the launcher) when they post events to
+// /api/v1/ingest/*. Without it, anyone who can reach the port could inject
+// forged events and poison the SIEM, the dashboard and every downstream rule.
+const ingestKeyHeader = "X-AEGIS-INGEST-KEY"
+
 // AuthMiddleware enforces either:
 //   - a live session (cookie set by /api/v1/auth/login, or X-AEGIS-SESSION
 //     header fallback), OR
-//   - a static API key via Authorization: Bearer <AEGIS_API_KEY>
+//   - a static API key via Authorization: Bearer <AEGIS_API_KEY>.
 //
-// When AEGIS_AUTH_REQUIRED=false (the default when AEGIS_API_KEY is empty AND
-// AEGIS_AUTH_REQUIRED is unset), the middleware is transparent so the
-// dashboard "local mode" still works for self-hosted single-user setups.
+// Ingest endpoints are handled separately: they accept the shared ingest key
+// (AEGIS_INGEST_KEY) in addition to a session or API key, and they are never
+// anonymous while a key is configured — even when AEGIS_AUTH_REQUIRED=false.
+//
+// When neither an API key nor a required flag is set, non-ingest traffic passes
+// through so the dashboard "local mode" keeps working on a loopback-only bind.
 type AuthMiddleware struct {
-	apiKey   string
-	required bool
+	apiKey    string
+	ingestKey string
+	required  bool
 }
 
 // NewAuthMiddleware creates the middleware.
 //
-//	apiKey: optional shared secret (Bearer token). Empty = no API-key auth path.
-//	required: when true, ALL non-public endpoints require a valid session OR
-//	a valid API key. When false, requests pass through unauthenticated.
+// apiKey is the optional dashboard API key (Bearer token). The ingest key is
+// read from AEGIS_INGEST_KEY and falls back to apiKey, so a single shared
+// secret protects both paths on small deployments.
 func NewAuthMiddleware(apiKey string) *AuthMiddleware {
 	required := apiKey != ""
 	// Explicit override via env: AEGIS_AUTH_REQUIRED=true|false
-	switch strings.ToLower(strings.TrimSpace(envOrEmpty("AEGIS_AUTH_REQUIRED"))) {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("AEGIS_AUTH_REQUIRED"))) {
 	case "true", "1", "yes":
 		required = true
 	case "false", "0", "no":
 		required = false
 	}
-	return &AuthMiddleware{apiKey: apiKey, required: required}
+	ingestKey := strings.TrimSpace(os.Getenv("AEGIS_INGEST_KEY"))
+	if ingestKey == "" {
+		ingestKey = apiKey
+	}
+	return &AuthMiddleware{apiKey: apiKey, ingestKey: ingestKey, required: required}
 }
 
-// Wrap returns an http.Handler that gates non-public paths behind a valid
-// session cookie OR a valid API key, when required is true.
+// HasIngestKey reports whether ingest endpoints are protected by a shared
+// secret. main() uses it to warn when the deployment runs unauthenticated.
+func (m *AuthMiddleware) HasIngestKey() bool { return m.ingestKey != "" }
+
+// Wrap gates requests behind a session, an API key or the ingest key.
 func (m *AuthMiddleware) Wrap(next http.Handler) http.Handler {
-	if !m.required {
-		return next
-	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if isPublicEndpoint(r.URL.Path) {
+		path := r.URL.Path
+
+		if isIngestEndpoint(path) {
+			if m.ingestKey == "" {
+				// No secret anywhere: allowed only in open local mode. When
+				// authentication is required, fall back to a dashboard session
+				// so ingest is never anonymous on a hardened deployment.
+				if !m.required || hasValidSession(r) {
+					next.ServeHTTP(w, r)
+					return
+				}
+				rejectUnauthorized(w, r, "ingest requires a session or "+ingestKeyHeader)
+				return
+			}
+			if secretEqual(r.Header.Get(ingestKeyHeader), m.ingestKey) ||
+				hasValidSession(r) || m.apiKeyMatches(r) {
+				next.ServeHTTP(w, r)
+				return
+			}
+			rejectUnauthorized(w, r, "ingest requires "+ingestKeyHeader+" or a valid session")
+			return
+		}
+
+		if !m.required {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if isPublicEndpoint(path) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -53,32 +94,61 @@ func (m *AuthMiddleware) Wrap(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		if m.apiKey != "" {
-			raw := r.Header.Get("Authorization")
-			token := strings.TrimPrefix(raw, "Bearer ")
-			if token == "" {
-				token = r.URL.Query().Get("api_key")
-			}
-			if token != "" && subtle.ConstantTimeCompare([]byte(token), []byte(m.apiKey)) == 1 {
-				next.ServeHTTP(w, r)
-				return
-			}
+		if m.apiKeyMatches(r) {
+			next.ServeHTTP(w, r)
+			return
 		}
-		w.Header().Set("WWW-Authenticate", `Bearer realm="Cybersecurity-AEGIS"`)
-		respondJSON(w, http.StatusUnauthorized, map[string]string{
-			"error": "unauthorized",
-			"hint":  "POST /api/v1/auth/login with {username, password} or use Authorization: Bearer <api-key> or X-AEGIS-SESSION: <session_token>",
-		})
-		log.Printf("auth: rejected %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
+		rejectUnauthorized(w, r, "")
 	})
 }
 
-// isPublicEndpoint returns true for paths that do not require authentication.
-// Login/me/logout endpoints must be public so the dashboard can authenticate.
-// Module-to-orchestrator ingest endpoints are public so internal Python
-// services can post events without a shared secret. Treat the orchestrator
-// host as a trust boundary (bind to localhost or behind a reverse proxy in
-// production).
+func (m *AuthMiddleware) apiKeyMatches(r *http.Request) bool {
+	if m.apiKey == "" {
+		return false
+	}
+	token := bearerToken(r)
+	return secretEqual(token, m.apiKey)
+}
+
+// bearerToken reads only the Authorization header. A key passed in the query
+// string ends up in access logs, reverse-proxy logs and browser history.
+func bearerToken(r *http.Request) string {
+	raw := strings.TrimSpace(r.Header.Get("Authorization"))
+	if raw == "" {
+		return ""
+	}
+	if len(raw) > 7 && strings.EqualFold(raw[:7], "bearer ") {
+		return strings.TrimSpace(raw[7:])
+	}
+	return raw
+}
+
+// secretEqual compares two secrets without leaking their length through timing.
+func secretEqual(a, b string) bool {
+	if a == "" || b == "" {
+		return false
+	}
+	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
+}
+
+func rejectUnauthorized(w http.ResponseWriter, r *http.Request, hint string) {
+	if hint == "" {
+		hint = "POST /api/v1/auth/login with {username, password} or use Authorization: Bearer <api-key> or X-AEGIS-SESSION: <session_token>"
+	}
+	w.Header().Set("WWW-Authenticate", `Bearer realm="Cybersecurity-AEGIS"`)
+	respondJSON(w, http.StatusUnauthorized, map[string]string{
+		"error": "unauthorized",
+		"hint":  hint,
+	})
+	log.Printf("auth: rejected %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
+}
+
+// isIngestEndpoint reports whether the path belongs to the event ingest API.
+func isIngestEndpoint(path string) bool {
+	return strings.HasPrefix(path, "/api/v1/ingest/")
+}
+
+// isPublicEndpoint reports whether a path may be served without credentials.
 func isPublicEndpoint(path string) bool {
 	if path == "/" || path == "/health" {
 		return true
@@ -86,12 +156,9 @@ func isPublicEndpoint(path string) bool {
 	if strings.HasPrefix(path, "/dashboard/") {
 		return true
 	}
-	if path == "/api/v1/auth/login" || path == "/api/v1/auth/local" || path == "/api/v1/auth/logout" || path == "/api/v1/auth/me" {
-		return true
-	}
-	// Module ingest endpoints: trusted internal callers only — keep the
-	// orchestrator bound to localhost or an internal network.
-	if strings.HasPrefix(path, "/api/v1/ingest/") {
+	// Login/me/logout must stay public so a client can obtain a session.
+	if path == "/api/v1/auth/login" || path == "/api/v1/auth/local" ||
+		path == "/api/v1/auth/logout" || path == "/api/v1/auth/me" {
 		return true
 	}
 	return false

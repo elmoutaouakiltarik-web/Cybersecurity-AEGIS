@@ -28,9 +28,34 @@ fusion_engine: ThreatFusionEngine | None = None
 
 
 # ── CORS ───────────────────────────────────────────────────────────────────────
+def _loopback_origin() -> str:
+    """Reflect the Origin only for genuine loopback pages.
+
+    A wildcard here lets any website the operator visits read responses from
+    these local APIs. Only localhost/127.0.0.1/[::1] origins are echoed back.
+    """
+    from urllib.parse import urlsplit
+
+    try:
+        from flask import request
+        origin = request.headers.get("Origin", "")
+    except Exception:
+        return ""
+    if not origin or origin == "null":
+        return ""
+    try:
+        host = urlsplit(origin).hostname
+    except ValueError:
+        return ""
+    return origin if host in ("localhost", "127.0.0.1", "::1") else ""
+
+
 @app.after_request
 def _add_cors(response: Any) -> Any:
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    _origin = _loopback_origin()
+    if _origin:
+        response.headers["Access-Control-Allow-Origin"] = _origin
+        response.headers["Vary"] = "Origin"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type"
     return response

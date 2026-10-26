@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import hmac
+import logging
 import os, sys
 from pathlib import Path
 from typing import Any, Dict, List
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 import pandas as pd
 
@@ -13,7 +15,31 @@ sys.path.insert(0, str(ROOT / 'src'))
 from cybershield_pro.predict import predict_dataframe, DEFAULT_BINARY_MODEL, DEFAULT_FAMILY_MODEL, DEFAULT_ANOMALY_MODEL
 from cybershield_pro.schema import NSL_KDD_FEATURES
 
+log = logging.getLogger('cybershield.api')
+
 app = FastAPI(title='CyberShield AI Real Pro API', version='0.3.0-final')
+
+# The prediction API shares the orchestrator's ingest secret. Without it any
+# process that can reach the port could drive the model or use it as a probe.
+INGEST_KEY_ENV = 'AEGIS_INGEST_KEY'
+
+
+def require_ingest_key(x_aegis_ingest_key: str | None = Header(default=None),
+                       authorization: str | None = Header(default=None)) -> None:
+    expected = os.environ.get(INGEST_KEY_ENV, '')
+    if not expected:
+        # Unset key: local development only. The bind address keeps the service
+        # on loopback in that case (see CYBERSHIELD_BIND in the Dockerfile).
+        return
+    supplied = x_aegis_ingest_key or ''
+    if not supplied and authorization:
+        supplied = authorization[7:].strip() if authorization.lower().startswith('bearer ') else authorization.strip()
+    if not supplied or not hmac.compare_digest(supplied, expected):
+        raise HTTPException(status_code=401, detail='invalid or missing X-AEGIS-INGEST-KEY')
+
+
+if not os.environ.get(INGEST_KEY_ENV):
+    log.warning('%s is not set: prediction endpoints accept unauthenticated calls', INGEST_KEY_ENV)
 
 BINARY_MODEL = os.getenv('CYBERSHIELD_BINARY_MODEL', str(ROOT / DEFAULT_BINARY_MODEL))
 FAMILY_MODEL = os.getenv('CYBERSHIELD_FAMILY_MODEL', str(ROOT / DEFAULT_FAMILY_MODEL))
@@ -39,7 +65,7 @@ def health():
         'required_features': NSL_KDD_FEATURES,
     }
 
-@app.post('/predict')
+@app.post('/predict', dependencies=[Depends(require_ingest_key)])
 def predict_one(event: FlowEvent):
     missing = [c for c in NSL_KDD_FEATURES if c not in event.features]
     if missing:
@@ -48,7 +74,7 @@ def predict_one(event: FlowEvent):
     out = predict_dataframe(df, BINARY_MODEL, FAMILY_MODEL, ANOMALY_MODEL, ot_ics=event.ot_ics)
     return out.iloc[0].to_dict()
 
-@app.post('/predict_batch')
+@app.post('/predict_batch', dependencies=[Depends(require_ingest_key)])
 def predict_batch(req: BatchRequest):
     if not req.events:
         return {'results': []}

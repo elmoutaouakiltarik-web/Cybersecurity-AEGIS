@@ -92,6 +92,18 @@ Every module is independently deployable and speaks the same event contract.
 | **Integrations** | `modules/integrations` | Read-only health probing of external OSS tools |
 | **Reports** | `modules/reports` | Report generation for incidents, assessment and exec summaries |
 
+## Module status
+
+Honest maturity labels, so nobody deploys a demo component into production by
+accident.
+
+| Status | Modules |
+|---|---|
+| **Stable** — used daily, covered by tests | Orchestrator, Shield engine, SIEM correlator, Threat intel, OT monitor, Site assessment, Evidence store, DFIR |
+| **Beta** — works end to end, API may change | SOAR, Vulnerability scanner, Network analyzer, Endpoint, Compliance, PKI, Sigma |
+| **Experimental** — scaffolding and read-only probes | Integrations, Threat fusion / YARA, Reports |
+| **Demo-grade** — ML model trained on NSL-KDD v0.3; the per-class metrics for U2R/R2L are weak and documented as such | CyberShield AI |
+
 ## Quick start
 
 ### Option A — Windows standalone (no Docker)
@@ -104,6 +116,10 @@ Every module is independently deployable and speaks the same event contract.
 The launcher builds the Go orchestrator, installs Python dependencies, starts
 every core module, brings up the host endpoint module on `:8088` and opens
 `http://localhost:8070/dashboard/`.
+
+It also generates a random `AEGIS_INGEST_KEY` for the run and exports it to every
+child process, so the collectors can post events while anonymous writes to
+`/api/v1/ingest/*` are rejected.
 
 To stop everything: `.\stop-aegis.ps1`, or `Ctrl+C` in the launcher window.
 
@@ -264,6 +280,14 @@ C2 infrastructure, no brute-force tooling and no active OT manipulation.
 | Dry-run SOAR | Playbooks execute in dry-run until explicitly armed |
 | OT protection | Industrial monitoring is opt-in via `docker-compose.industrial.yml` |
 | Local data | No telemetry, no cloud account, no phone-home |
+| Authenticated ingest | `X-AEGIS-INGEST-KEY` required on `/api/v1/ingest/*` when `AEGIS_INGEST_KEY` is set |
+| Loopback by default | Orchestrator binds `127.0.0.1:8070`; compose publishes the port on host loopback |
+| Exact CORS | Only real `localhost`/`127.0.0.1`/`::1` origins are reflected — no wildcard, no `null` |
+| Verified models | `*.joblib` are checked against `models/SHA256SUMS` before loading |
+| Header-only API keys | Keys in the query string are ignored, so they never reach access logs |
+
+Trust boundaries and the impact of a compromised component are in
+[docs/threat-model.md](docs/threat-model.md).
 
 See [SECURITY.md](SECURITY.md) for the disclosure process and the deployment
 checklist (including dashboard authentication, which is **off by default** for
@@ -359,6 +383,12 @@ of the project.
 
 Released under **AGPL-3.0 + Commons Clause** — full terms in [LICENSE](LICENSE),
 ownership and attribution in [NOTICE](NOTICE).
+
+> **This is source-available, not OSI open source.** The Commons Clause removes
+the right to sell the software, so the project does not meet the Open Source
+Definition and has no SPDX identifier. GitHub labels the repository `AGPL-3.0`
+because that is the license text it recognises; the Commons Clause condition
+applies on top of it.
 
 - Free for personal, research and internal defensive use.
 - Commercial redistribution, OEM embedding and MSP multi-tenant use require a

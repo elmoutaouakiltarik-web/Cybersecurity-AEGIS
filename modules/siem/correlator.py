@@ -37,6 +37,9 @@ try:
 except ImportError:
     _REQUESTS = False
 
+# Shared secret for orchestrator ingest endpoints (must match AEGIS_INGEST_KEY).
+_INGEST_HEADERS = {"X-AEGIS-INGEST-KEY": os.environ.get("AEGIS_INGEST_KEY", "")}
+
 LOGGER = logging.getLogger('aegis.siem')
 
 
@@ -418,7 +421,7 @@ class SIEMCorrelator:
             'raw_data': incident.to_dict(),
         }
         try:
-            requests.post(f'{self.orchestrator_url}/api/v1/ingest/generic', json=payload, timeout=3)
+            requests.post(f'{self.orchestrator_url}/api/v1/ingest/generic', json=payload, timeout=3, headers=_INGEST_HEADERS)
         except Exception as exc:
             LOGGER.debug('Orchestrator forward failed: %s', exc)
 

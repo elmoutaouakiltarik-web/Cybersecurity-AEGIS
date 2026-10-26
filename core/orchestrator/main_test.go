@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 )
 
@@ -162,12 +164,152 @@ func TestAuthMiddleware(t *testing.T) {
 		t.Fatalf("expected 200 with valid key, got %d", res.Code)
 	}
 
-	// Query-parameter key also accepted.
+	// Query-parameter keys are refused: they leak into access logs.
 	req = httptest.NewRequest(http.MethodGet, "/api/v1/metrics?api_key=test-secret-key", nil)
 	res = httptest.NewRecorder()
 	handler.ServeHTTP(res, req)
-	if res.Code != http.StatusOK {
-		t.Fatalf("expected 200 with api_key query param, got %d", res.Code)
+	if res.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 with api_key in query string, got %d", res.Code)
+	}
+
+	// The session header path still works.
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/metrics", nil)
+	req.Header.Set("Authorization", "Bearer wrong-key")
+	res = httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+	if res.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 with wrong key, got %d", res.Code)
+	}
+}
+
+func TestIngestRequiresSharedKey(t *testing.T) {
+	original := os.Getenv("AEGIS_INGEST_KEY")
+	t.Cleanup(func() { os.Setenv("AEGIS_INGEST_KEY", original) })
+	os.Setenv("AEGIS_INGEST_KEY", "ingest-secret")
+
+	o := NewOrchestrator(nil, nil, &Config{MaxEvents: 100})
+	auth := NewAuthMiddleware("")
+	handler := auth.Wrap(o.Routes())
+
+	body := `{"source":"test","category":"system","severity":"low","title":"forged"}`
+
+	// Anonymous ingest is rejected even though no API key is configured.
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/ingest/generic", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+	if res.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 for anonymous ingest, got %d body=%s", res.Code, res.Body.String())
+	}
+
+	// Wrong key is rejected.
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/ingest/generic", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-AEGIS-INGEST-KEY", "not-the-key")
+	res = httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+	if res.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 for wrong ingest key, got %d", res.Code)
+	}
+
+	// Correct key is accepted.
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/ingest/generic", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-AEGIS-INGEST-KEY", "ingest-secret")
+	res = httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+	if res.Code != http.StatusOK && res.Code != http.StatusAccepted && res.Code != http.StatusCreated {
+		t.Fatalf("expected success with valid ingest key, got %d body=%s", res.Code, res.Body.String())
+	}
+}
+
+func TestCORSRejectsLookalikeOrigins(t *testing.T) {
+	cases := []struct {
+		origin string
+		want   bool
+	}{
+		{"http://localhost:8080", true},
+		{"http://127.0.0.1:8070", true},
+		{"https://localhost", true},
+		{"http://localhost.evil.example", false},
+		{"http://127.0.0.1.evil.example", false},
+		{"null", false},
+		{"http://evil.example", false},
+		{"file://", false},
+		{"", false},
+	}
+	for _, c := range cases {
+		if got := isLoopbackOrigin(c.origin); got != c.want {
+			t.Errorf("isLoopbackOrigin(%q) = %v, want %v", c.origin, got, c.want)
+		}
+	}
+}
+
+func TestCORSHeaderOnlyForLoopback(t *testing.T) {
+	o := NewOrchestrator(nil, nil, &Config{MaxEvents: 100})
+	handler := o.Routes()
+
+	for _, origin := range []string{"http://localhost.evil.example", "null", "http://evil.example"} {
+		req := httptest.NewRequest(http.MethodGet, "/health", nil)
+		req.Header.Set("Origin", origin)
+		res := httptest.NewRecorder()
+		handler.ServeHTTP(res, req)
+		if got := res.Header().Get("Access-Control-Allow-Origin"); got != "" {
+			t.Errorf("origin %q got Access-Control-Allow-Origin %q, want none", origin, got)
+		}
+		if got := res.Header().Get("Access-Control-Allow-Credentials"); got != "" {
+			t.Errorf("origin %q got credentials header, want none", origin)
+		}
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	req.Header.Set("Origin", "http://localhost:8070")
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+	if got := res.Header().Get("Access-Control-Allow-Origin"); got != "http://localhost:8070" {
+		t.Errorf("loopback origin not reflected, got %q", got)
+	}
+}
+
+func TestRateLimiterBlocksBurst(t *testing.T) {
+	rl := newRateLimiter(true, 60, 2)
+	allowed := 0
+	for i := 0; i < 10; i++ {
+		if rl.Allow("10.0.0.1") {
+			allowed++
+		}
+	}
+	if allowed != 2 {
+		t.Fatalf("expected 2 requests through the bucket, got %d", allowed)
+	}
+	// A different client has its own bucket.
+	if !rl.Allow("10.0.0.2") {
+		t.Fatal("expected independent bucket for second client")
+	}
+	// Disabled limiter never blocks.
+	off := newRateLimiter(false, 1, 1)
+	for i := 0; i < 100; i++ {
+		if !off.Allow("10.0.0.3") {
+			t.Fatal("disabled limiter must allow everything")
+		}
+	}
+}
+
+func TestPasswordHashingRejectsWrongPassword(t *testing.T) {
+	t.Setenv("AEGIS_ADMIN_USER", "admin")
+	t.Setenv("AEGIS_ADMIN_PASSWORD", "correct-horse-battery")
+	creds := newAdminCreds()
+	if !creds.Verify("admin", "correct-horse-battery") {
+		t.Fatal("expected valid password to verify")
+	}
+	if creds.Verify("admin", "wrong") {
+		t.Fatal("expected wrong password to fail")
+	}
+	if creds.Verify("other", "correct-horse-battery") {
+		t.Fatal("expected wrong user to fail")
+	}
+	if len(creds.hash) != argonKeyLen {
+		t.Fatalf("expected %d-byte argon2id hash, got %d", argonKeyLen, len(creds.hash))
 	}
 }
 

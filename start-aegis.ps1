@@ -348,6 +348,17 @@ Write-Step "Starting Python module services..." "Cyan"
 if (-not $env:ABUSEIPDB_KEY)  { $env:ABUSEIPDB_KEY  = "YOUR_ABUSEIPDB_KEY_HERE" }
 if (-not $env:OTX_API_KEY)    { $env:OTX_API_KEY    = "YOUR_OTX_API_KEY_HERE"   }
 
+# ── INGEST SHARED SECRET ──────────────────────────────────────────────────────
+# Every module signs its event posts with AEGIS_INGEST_KEY and the orchestrator
+# rejects anything without it. Generated once per run unless already set, then
+# inherited by every child process started below.
+if (-not $env:AEGIS_INGEST_KEY) {
+    $ingestBytes = New-Object byte[] 32
+    [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($ingestBytes)
+    $env:AEGIS_INGEST_KEY = -join ($ingestBytes | ForEach-Object { $_.ToString("x2") })
+    Write-Host "    Ingest shared secret generated for this run" -ForegroundColor DarkGray
+}
+
 $orchUrl = "http://localhost:8080"
 
 # Network Monitor — port 8081
@@ -542,6 +553,7 @@ if (-not (Test-PortFree 8080)) {
         try { $orchPsi.EnvironmentVariables[$e.Key] = $e.Value } catch {}
     }
     $orchPsi.EnvironmentVariables["AEGIS_BIND"] = $BindAddress
+    $orchPsi.EnvironmentVariables["AEGIS_INGEST_KEY"] = $env:AEGIS_INGEST_KEY
     $orchPsi.EnvironmentVariables["AEGIS_LOG_LEVEL"] = "info"
     $orchPsi.EnvironmentVariables["AEGIS_PROXY_ENDPOINT"] = "http://localhost:$EndpointPort"
 

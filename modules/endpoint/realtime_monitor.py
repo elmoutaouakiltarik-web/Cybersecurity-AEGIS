@@ -40,6 +40,9 @@ except ImportError:
 
 from windows_audit import _run_ps
 
+# Shared secret for orchestrator ingest endpoints (must match AEGIS_INGEST_KEY).
+_INGEST_HEADERS = {"X-AEGIS-INGEST-KEY": os.environ.get("AEGIS_INGEST_KEY", "")}
+
 LOGGER = logging.getLogger("aegis.endpoint.realtime")
 
 
@@ -321,7 +324,7 @@ class RealtimeMonitor:
         try:
             requests.post(
                 f"{self.orchestrator_url}/api/v1/ingest/generic",
-                json=payload, timeout=4,
+                json=payload, timeout=4, headers=_INGEST_HEADERS
             )
         except Exception as e:
             LOGGER.debug("emit failed: %s", e)

@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -1677,24 +1678,51 @@ func withCommonHeaders(next http.Handler) http.Handler {
 	})
 }
 
+// withCORS reflects the Origin only for genuine loopback origins. A prefix
+// match would accept http://localhost.attacker.example, and reflecting "null"
+// would let a sandboxed iframe or a file:// page read credentialed responses.
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		if origin == "null" || strings.HasPrefix(origin, "http://localhost") || strings.HasPrefix(origin, "http://127.0.0.1") || strings.HasPrefix(origin, "http://[::1]") {
+		if origin != "" {
+			w.Header().Add("Vary", "Origin")
+		}
+		if isLoopbackOrigin(origin) {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
-			w.Header().Add("Vary", "Origin")
-		} else {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
 		}
+		// Any other origin gets no Access-Control-Allow-Origin header at all,
+		// so the browser blocks the read instead of exposing the response.
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, X-AEGIS-SESSION")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, X-AEGIS-SESSION, "+ingestKeyHeader)
+		w.Header().Set("Access-Control-Max-Age", "600")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// isLoopbackOrigin reports whether origin is an http(s) URL served from the
+// local machine. Hostnames are compared exactly, after parsing, so
+// "localhost.evil.example" and "null" are rejected.
+func isLoopbackOrigin(origin string) bool {
+	if origin == "" || origin == "null" {
+		return false
+	}
+	u, err := url.Parse(origin)
+	if err != nil || u.User != nil {
+		return false
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return false
+	}
+	switch strings.ToLower(strings.TrimSuffix(u.Hostname(), ".")) {
+	case "localhost", "127.0.0.1", "::1":
+		return true
+	}
+	return false
 }
 
 func respondJSON(w http.ResponseWriter, status int, value any) {
@@ -1894,7 +1922,9 @@ func main() {
 
 	bind := config.Bind
 	if bind == "" {
-		bind = "0.0.0.0:8070"
+		// Loopback by default: SECURITY.md promises the orchestrator is not
+		// reachable from the network unless the operator opts in.
+		bind = "127.0.0.1:8070"
 	}
 
 	hub := NewLiveHub()
@@ -1954,9 +1984,12 @@ func main() {
 	if adminUser == "" {
 		adminUser = "admin"
 	}
-	pwSource := "default"
-	if config.AdminPassword != "" {
+	pwSource := "generated (random, this run only)"
+	switch {
+	case config.AdminPassword != "":
 		pwSource = "config"
+	case os.Getenv("AEGIS_ADMIN_PASSWORD") != "":
+		pwSource = "environment"
 	}
 	authRequired := config.APIKey != "" || config.AuthRequired
 	auth := NewAuthMiddleware(config.APIKey)
@@ -1965,12 +1998,24 @@ func main() {
 		log.Printf("WARNING: No API key and auth not required — dashboard runs in OPEN mode (local trust)")
 	}
 	if config.APIKey != "" {
-		log.Printf("API key authentication path enabled (Bearer token)")
+		log.Printf("API key authentication path enabled (Authorization: Bearer header only)")
+	}
+	if auth.HasIngestKey() {
+		log.Printf("Ingest authentication enabled (%s required)", ingestKeyHeader)
+	} else {
+		log.Printf("WARNING: ingest endpoints have no shared secret; they accept unauthenticated posts. Keep the bind on loopback or set AEGIS_INGEST_KEY.")
+	}
+
+	limiter := newRateLimiter(config.RateLimitEnabled, config.RateLimitRPM, config.RateLimitBurst)
+	if config.RateLimitEnabled {
+		log.Printf("Rate limit: %d req/min, burst %d, applied to unauthenticated API calls", config.RateLimitRPM, config.RateLimitBurst)
+	} else {
+		log.Printf("Rate limit: disabled by configuration")
 	}
 
 	server := &http.Server{
 		Addr:              bind,
-		Handler:           securityHeaders(auth.Wrap(orchestrator.Routes())),
+		Handler:           securityHeaders(limiter.Wrap(auth.Wrap(orchestrator.Routes()))),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		// Generous write timeout: proxied audit/scan calls to the endpoint or

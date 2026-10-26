@@ -312,7 +312,9 @@ def test_scan_detects_open_port_locally(loopback_engagement):
     server = FakeServer(b"SSH-2.0-OpenSSH_8.9\r\n")
     try:
         guard = _guard(loopback_engagement)
-        observations = scan.scan_host("127.0.0.1", [server.port], guard, timeout=0.5)
+        # 2s instead of 0.5s: the connect timeout was tight enough that a busy
+        # CI runner reported the local listener as closed.
+        observations = scan.scan_host("127.0.0.1", [server.port], guard, timeout=2.0)
         assert any(o.port == server.port and o.state == "open" for o in observations)
     finally:
         server.close()

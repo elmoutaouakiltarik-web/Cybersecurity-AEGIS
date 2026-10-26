@@ -32,6 +32,9 @@ try:
 except ImportError:
     _REQUESTS = False
 
+# Shared secret for orchestrator ingest endpoints (must match AEGIS_INGEST_KEY).
+_INGEST_HEADERS = {"X-AEGIS-INGEST-KEY": os.environ.get("AEGIS_INGEST_KEY", "")}
+
 LOGGER = logging.getLogger('aegis.vuln')
 
 NVD_API_BASE = 'https://services.nvd.nist.gov/rest/json/cves/2.0'
@@ -383,7 +386,7 @@ class VulnerabilityScanner:
             'raw_data': finding.to_dict(),
         }
         try:
-            requests.post(f'{self.orchestrator_url}/api/v1/ingest/generic', json=payload, timeout=3)
+            requests.post(f'{self.orchestrator_url}/api/v1/ingest/generic', json=payload, timeout=3, headers=_INGEST_HEADERS)
         except Exception as exc:
             LOGGER.debug('Orchestrator forward failed: %s', exc)
 

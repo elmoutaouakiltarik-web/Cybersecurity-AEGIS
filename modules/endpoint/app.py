@@ -85,6 +85,9 @@ try:
 except ImportError:
     _REQUESTS = False
 
+# Shared secret for orchestrator ingest endpoints (must match AEGIS_INGEST_KEY).
+_INGEST_HEADERS = {"X-AEGIS-INGEST-KEY": os.environ.get("AEGIS_INGEST_KEY", "")}
+
 LOGGER = logging.getLogger("aegis.endpoint")
 app = Flask(__name__)
 
@@ -139,7 +142,7 @@ def _ransom_emit(payload: Dict[str, Any]) -> None:
         return
     try:
         requests.post(f"{ORCHESTRATOR_URL}/api/v1/ingest/generic",
-                       json=payload, timeout=4)
+                       json=payload, timeout=4, headers=_INGEST_HEADERS)
     except Exception:
         pass
 ransom_detector = RansomwareDetector(emit_callback=_ransom_emit)
@@ -158,7 +161,7 @@ def _honey_emit(evt) -> None:
             "tags":        ["honeypot", "deception", "real-time", evt.technique],
             "raw_data":    evt.to_dict(),
             "timestamp":   evt.timestamp,
-        }, timeout=4)
+        }, timeout=4, headers=_INGEST_HEADERS)
     except Exception:
         pass
 honeypot = HoneypotManager(emit_callback=_honey_emit,
@@ -169,7 +172,7 @@ def _sigma_emit(evt: Dict[str, Any]) -> None:
     if not _REQUESTS or not ENABLE_INGEST:
         return
     try:
-        requests.post(f"{ORCHESTRATOR_URL}/api/v1/ingest/generic", json=evt, timeout=4)
+        requests.post(f"{ORCHESTRATOR_URL}/api/v1/ingest/generic", json=evt, timeout=4, headers=_INGEST_HEADERS)
     except Exception:
         pass
 sigma_engine = SigmaLiveEngine(
@@ -187,9 +190,34 @@ threading.Thread(target=_bootstrap_kev, daemon=True).start()
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
 
+def _loopback_origin() -> str:
+    """Reflect the Origin only for genuine loopback pages.
+
+    A wildcard here lets any website the operator visits read responses from
+    these local APIs. Only localhost/127.0.0.1/[::1] origins are echoed back.
+    """
+    from urllib.parse import urlsplit
+
+    try:
+        from flask import request
+        origin = request.headers.get("Origin", "")
+    except Exception:
+        return ""
+    if not origin or origin == "null":
+        return ""
+    try:
+        host = urlsplit(origin).hostname
+    except ValueError:
+        return ""
+    return origin if host in ("localhost", "127.0.0.1", "::1") else ""
+
+
 @app.after_request
 def _cors(response: Any) -> Any:
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    _origin = _loopback_origin()
+    if _origin:
+        response.headers["Access-Control-Allow-Origin"] = _origin
+        response.headers["Vary"] = "Origin"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type"
     return response
@@ -1020,7 +1048,7 @@ def _ingest_event(payload: Dict[str, Any]) -> None:
     try:
         payload.setdefault("timestamp", datetime.now(timezone.utc).isoformat())
         requests.post(f"{ORCHESTRATOR_URL}/api/v1/ingest/generic",
-                      json=payload, timeout=4)
+                      json=payload, timeout=4, headers=_INGEST_HEADERS)
     except Exception as e:
         LOGGER.debug("ingest failed: %s", e)
 
@@ -1092,7 +1120,7 @@ def _register_with_orchestrator() -> None:
             "description": f"Native endpoint module v{VERSION} on {sys.platform} reporting in.",
             "tags": ["endpoint", "startup"],
             "raw_data": {"host_info": get_system_info()},
-        }, timeout=4)
+        }, timeout=4, headers=_INGEST_HEADERS)
     except Exception:
         pass
 

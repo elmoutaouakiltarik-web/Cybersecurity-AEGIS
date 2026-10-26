@@ -36,6 +36,9 @@ except ImportError:  # pragma: no cover - optional dependency
     sniff = None  # type: ignore
 
 
+# Shared secret for orchestrator ingest endpoints (must match AEGIS_INGEST_KEY).
+_INGEST_HEADERS = {"X-AEGIS-INGEST-KEY": os.environ.get("AEGIS_INGEST_KEY", "")}
+
 LOGGER = logging.getLogger("aegis.ot")
 
 OT_PROTOCOL_PORTS = {
@@ -245,7 +248,7 @@ class OTMonitor:
             requests.post(
                 f"{self.orchestrator_url}/api/v1/ingest/ot",
                 json=alert.to_dict(),
-                timeout=3,
+                timeout=3, headers=_INGEST_HEADERS
             )
         except Exception as exc:  # pragma: no cover - network dependent
             LOGGER.debug("orchestrator ingest failed: %s", exc)

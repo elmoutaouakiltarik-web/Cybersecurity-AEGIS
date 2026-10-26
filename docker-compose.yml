@@ -20,11 +20,12 @@ services:
     container_name: aegis-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: aegis
-      POSTGRES_PASSWORD: aegis
-      POSTGRES_DB: aegis
+      POSTGRES_USER: ${POSTGRES_USER:-aegis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-aegis}
     ports:
-      - "5432:5432"
+      # Loopback only: the database is not meant to be reachable from the LAN.
+      - "127.0.0.1:5432:5432"
     volumes:
       - pg-data:/var/lib/postgresql/data
 

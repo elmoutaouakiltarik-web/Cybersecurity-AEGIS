@@ -3,8 +3,12 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+    environment:
+      # Reachable from the compose network; the published port stays on loopback.
+      CYBERSHIELD_BIND: "0.0.0.0"
+      AEGIS_INGEST_KEY: ${AEGIS_INGEST_KEY:?set AEGIS_INGEST_KEY in .env}
     ports:
-      - "8919:8919"
+      - "127.0.0.1:8919:8919"
     volumes:
       - ./models:/app/models:ro
       - ./reports:/app/reports

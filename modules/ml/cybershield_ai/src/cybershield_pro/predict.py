@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 from pathlib import Path
 
 import joblib
@@ -61,8 +63,67 @@ def resolve_model_path(path: str | Path) -> Path:
     return _PKG_ROOT / p
 
 
+DEFAULT_CHECKSUMS = "models/SHA256SUMS"
+_VERIFIED: dict[tuple[str, int, int], None] = {}
+
+
+def _checksum_manifest() -> dict[str, str]:
+    """Read the SHA-256 manifest shipped next to the models."""
+    manifest = Path(os.environ.get("CYBERSHIELD_MODEL_CHECKSUMS", str(_PKG_ROOT / DEFAULT_CHECKSUMS)))
+    entries: dict[str, str] = {}
+    if not manifest.exists():
+        return entries
+    for line in manifest.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split(None, 1)
+        if len(parts) != 2:
+            continue
+        entries[parts[1].strip().lstrip("*")] = parts[0].strip().lower()
+    return entries
+
+
+def verify_model(path: str | Path) -> Path:
+    """Refuse to unpickle a model that does not match its recorded checksum.
+
+    The model artifacts are joblib pickles: loading a tampered file executes
+    arbitrary code with the privileges of the service. Every load is therefore
+    checked against ``models/SHA256SUMS``. Set
+    ``CYBERSHIELD_ALLOW_UNVERIFIED_MODELS=1`` only when deliberately loading a
+    model you produced yourself and did not register.
+    """
+    resolved = resolve_model_path(path)
+    if not resolved.exists():
+        raise FileNotFoundError(f"model not found: {resolved}")
+
+    stat = resolved.stat()
+    cache_key = (str(resolved), stat.st_mtime_ns, stat.st_size)
+    if cache_key in _VERIFIED:
+        return resolved
+
+    expected = _checksum_manifest().get(resolved.name)
+    if expected is None:
+        if os.environ.get("CYBERSHIELD_ALLOW_UNVERIFIED_MODELS") == "1":
+            _VERIFIED[cache_key] = None
+            return resolved
+        raise RuntimeError(
+            f"model {resolved.name} has no entry in {DEFAULT_CHECKSUMS}; refusing to load "
+            "an unverified pickle (set CYBERSHIELD_ALLOW_UNVERIFIED_MODELS=1 to override)"
+        )
+
+    digest = hashlib.sha256(resolved.read_bytes()).hexdigest()
+    if digest != expected:
+        raise RuntimeError(
+            f"checksum mismatch for {resolved.name}: expected {expected}, got {digest}. "
+            "The model file was modified; refusing to load it."
+        )
+    _VERIFIED[cache_key] = None
+    return resolved
+
+
 def load_payload(path: str | Path):
-    return joblib.load(resolve_model_path(path))
+    return joblib.load(verify_model(path))
 
 
 def predict_dataframe(df: pd.DataFrame, binary_model_path=DEFAULT_BINARY_MODEL, family_model_path=DEFAULT_FAMILY_MODEL, anomaly_model_path=DEFAULT_ANOMALY_MODEL, ot_ics: bool = False) -> pd.DataFrame:

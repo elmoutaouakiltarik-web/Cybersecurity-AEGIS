@@ -13,6 +13,9 @@ import requests
 from datetime import datetime, timezone
 from pymodbus.client import ModbusTcpClient
 
+# Shared secret for orchestrator ingest endpoints (must match AEGIS_INGEST_KEY).
+_INGEST_HEADERS = {"X-AEGIS-INGEST-KEY": os.environ.get("AEGIS_INGEST_KEY", "")}
+
 ORCHESTRATOR_URL = os.getenv("ORCHESTRATOR_URL", "http://orchestrator:8080")
 HOST = os.getenv("MODBUS_HOST", "127.0.0.1")
 PORT = int(os.getenv("MODBUS_PORT", "502"))
@@ -23,7 +26,7 @@ INTERVAL = int(os.getenv("POLL_INTERVAL_SEC", "10"))
 
 def send_event(payload: dict):
     try:
-        requests.post(f"{ORCHESTRATOR_URL}/api/v1/ingest/ot", json=payload, timeout=5)
+        requests.post(f"{ORCHESTRATOR_URL}/api/v1/ingest/ot", json=payload, timeout=5, headers=_INGEST_HEADERS)
     except Exception as e:
         print(f"[OT Monitor] Failed to send event to orchestrator: {e}", file=sys.stderr)
 

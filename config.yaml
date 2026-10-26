@@ -4,13 +4,19 @@
 # Environment variables override these values (prefix: AEGIS_)
 
 orchestrator:
-  bind: "0.0.0.0:8080"
+  # Loopback by default so the dashboard is not reachable from the LAN.
+  # Containers set AEGIS_BIND=0.0.0.0:8070 (see docker-compose.full.yml).
+  bind: "127.0.0.1:8070"
   auth_required: true
   api_key: ""                          # Generate: openssl rand -hex 32
+  # Shared secret for /api/v1/ingest/*. Read from AEGIS_INGEST_KEY; falls back
+  # to api_key. Leave empty only for loopback-only single-user setups.
+  ingest_key: ""                        # Generate: openssl rand -hex 32
   session_ttl_hours: 24
   admin_user: "admin"
-  admin_password: ""                   # Generate strong password
-  postgres_dsn: "postgres://aegis:aegis@postgres:5432/aegis?sslmode=disable"
+  admin_password: ""                   # Read from AEGIS_ADMIN_PASSWORD
+  # Never hardcode credentials here: set AEGIS_DB_CONN instead.
+  postgres_dsn: ""
   redis_addr: "redis:6379"
   sigma_dir: "data/sigma"
   evidence_dir: "data/evidence"
@@ -29,7 +35,8 @@ orchestrator:
 
 ml:
   api_port: 8919
-  bind_host: "0.0.0.0"
+  # Loopback by default; the ML API is also protected by AEGIS_INGEST_KEY.
+  bind_host: "127.0.0.1"
   binary_model: "models/cybershield_realpro_binary_ensemble_v0_3.joblib"
   family_model: "models/cybershield_realpro_attack_family_v0_3.joblib"
   anomaly_model: "models/cybershield_realpro_anomaly_baseline_v0_3.joblib"
@@ -55,7 +62,7 @@ endpoint:
   honeypot_bind: "127.0.0.1"
 
 network:
-  bind_host: "0.0.0.0"
+  bind_host: "127.0.0.1"
   api_port: 8081
   interface: "eth0"
   simulate: true
@@ -124,7 +131,8 @@ observability:
     enabled: true
     port: 3000
     admin_user: "admin"
-    admin_password: "admin"
+    # No shipped default: set GRAFANA_ADMIN_PASSWORD before enabling Grafana.
+    admin_password: ""
   loki:
     enabled: true
     port: 3100

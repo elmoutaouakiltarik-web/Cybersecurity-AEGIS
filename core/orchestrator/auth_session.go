@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/rand"
-	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/crypto/argon2"
 )
 
 // ── Session store ────────────────────────────────────────────────────────────
@@ -106,10 +107,23 @@ func (s *sessionStore) Delete(sid string) {
 //   AEGIS_ADMIN_USER     (default: admin)
 //   AEGIS_ADMIN_PASSWORD (if unset, a random one is generated and printed at startup)
 
+// Argon2id parameters. Tuned for an interactive single-admin login: ~64 MiB
+// and a few milliseconds per verification on commodity hardware.
+const (
+	argonTime    = 3
+	argonMemory  = 64 * 1024 // KiB
+	argonThreads = 2
+	argonKeyLen  = 32
+)
+
 type adminCreds struct {
 	user string
 	salt []byte
 	hash []byte
+}
+
+func hashPassword(pw string, salt []byte) []byte {
+	return argon2.IDKey([]byte(pw), salt, argonTime, argonMemory, argonThreads, argonKeyLen)
 }
 
 func newAdminCreds() *adminCreds {
@@ -127,20 +141,14 @@ func newAdminCreds() *adminCreds {
 	}
 	salt := make([]byte, 16)
 	_, _ = rand.Read(salt)
-	h := sha256.New()
-	h.Write(salt)
-	h.Write([]byte(pw))
-	return &adminCreds{user: user, salt: salt, hash: h.Sum(nil)}
+	return &adminCreds{user: user, salt: salt, hash: hashPassword(pw, salt)}
 }
 
 func (a *adminCreds) Verify(user, pw string) bool {
 	if subtle.ConstantTimeCompare([]byte(strings.TrimSpace(user)), []byte(a.user)) != 1 {
 		return false
 	}
-	h := sha256.New()
-	h.Write(a.salt)
-	h.Write([]byte(pw))
-	got := h.Sum(nil)
+	got := hashPassword(pw, a.salt)
 	return subtle.ConstantTimeCompare(got, a.hash) == 1
 }
 
@@ -466,18 +474,14 @@ func hasValidSession(r *http.Request) bool {
 	return ok
 }
 
-// hasValidAPIKey checks the Authorization Bearer or ?api_key= against AEGIS_API_KEY.
+// hasValidAPIKey checks the Authorization header against AEGIS_API_KEY.
+// Query-string keys are deliberately not accepted: they leak into logs.
 func hasValidAPIKey(r *http.Request) bool {
 	key := os.Getenv("AEGIS_API_KEY")
 	if key == "" {
 		return false
 	}
-	raw := r.Header.Get("Authorization")
-	token := strings.TrimPrefix(raw, "Bearer ")
-	if token == "" {
-		token = r.URL.Query().Get("api_key")
-	}
-	return token != "" && subtle.ConstantTimeCompare([]byte(token), []byte(key)) == 1
+	return secretEqual(bearerToken(r), key)
 }
 
 func jsonErr(msg string) error { return &errString{msg} }

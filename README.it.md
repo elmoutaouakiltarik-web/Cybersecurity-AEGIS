@@ -166,8 +166,13 @@ impianti OT.
 | Dati locali | Nessuna telemetria, nessun account cloud |
 
 L'autenticazione della dashboard è **disattivata di default** per l'uso su
-localhost: va abilitata prima di esporre il servizio. Dettagli e processo di
-segnalazione in [SECURITY.md](SECURITY.md).
+localhost: va abilitata prima di esporre il servizio. L'ingest invece è
+**autenticato**: `/api/v1/ingest/*` richiede la chiave condivisa in
+`X-AEGIS-INGEST-KEY` (`AEGIS_INGEST_KEY`), che il launcher genera a ogni avvio.
+
+Dettagli e processo di segnalazione in [SECURITY.md](SECURITY.md); confini di
+fiducia e impatto di un componente compromesso in
+[docs/threat-model.md](docs/threat-model.md).
 
 ## Plant Assessment — lavoro sul campo
 
@@ -210,6 +215,12 @@ trasferisce la proprietà né assegna il copyright su alcuna parte del progetto.
 
 Rilasciato con **AGPL-3.0 + Commons Clause** — testo integrale in
 [LICENSE](LICENSE), proprietà e attribuzione in [NOTICE](NOTICE).
+
+> **Source-available, non open source OSI.** Il Commons Clause toglie il diritto
+di vendere il software, quindi il progetto non soddisfa la Open Source
+Definition e non ha un identificativo SPDX. GitHub lo etichetta `AGPL-3.0`
+perché riconosce quel testo: la condizione del Commons Clause si applica in
+aggiunta.
 
 - Uso personale, di ricerca e difensivo interno gratuito.
 - Ridistribuzione commerciale, embedding OEM e uso MSP multi-tenant richiedono

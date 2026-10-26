@@ -32,6 +32,9 @@ except ImportError:  # pragma: no cover - optional dependency
     requests = None  # type: ignore
 
 
+# Shared secret for orchestrator ingest endpoints (must match AEGIS_INGEST_KEY).
+_INGEST_HEADERS = {"X-AEGIS-INGEST-KEY": os.environ.get("AEGIS_INGEST_KEY", "")}
+
 LOGGER = logging.getLogger("aegis.agent")
 
 
@@ -213,7 +216,7 @@ class CybersecurityAegisAgent:
             LOGGER.info("event %s", json.dumps(payload, sort_keys=True))
             return
         try:
-            requests.post(f"{self.orchestrator_url}/api/v1/ingest/generic", json=payload, timeout=3)
+            requests.post(f"{self.orchestrator_url}/api/v1/ingest/generic", json=payload, timeout=3, headers=_INGEST_HEADERS)
         except Exception as exc:  # pragma: no cover - network dependent
             LOGGER.debug("orchestrator ingest failed: %s", exc)
 

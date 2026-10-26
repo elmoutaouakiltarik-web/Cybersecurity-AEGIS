@@ -15,4 +15,9 @@ EXPOSE 8919
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8919/health', timeout=3).read()"
 
-CMD ["uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "8919"]
+# Loopback by default: the port only needs to be reachable from the compose
+# network, so containers set CYBERSHIELD_BIND=0.0.0.0 while a bare run stays local.
+ENV CYBERSHIELD_BIND=127.0.0.1 \
+    CYBERSHIELD_PORT=8919
+
+CMD ["sh", "-c", "uvicorn api.app:app --host ${CYBERSHIELD_BIND} --port ${CYBERSHIELD_PORT}"]

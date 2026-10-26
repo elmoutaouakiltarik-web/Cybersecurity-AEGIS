@@ -54,3 +54,8 @@ data/pki/
 compliance_data/
 dfir_data/
 evidence_store/
+
+# Downloaded feed caches (fetched at runtime, never committed)
+data/iocs/
+data/kev/
+data/events.jsonl

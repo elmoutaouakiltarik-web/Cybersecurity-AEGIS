@@ -192,7 +192,9 @@ func NewConfigManager() *ConfigManager {
 // setDefaults sets all default configuration values
 func setDefaults(v *viper.Viper) {
 	// Orchestrator defaults
-	v.SetDefault("orchestrator.bind", "0.0.0.0:8070")
+	// Loopback by default. Containers must set AEGIS_BIND=0.0.0.0:8070 so the
+	// other services in the compose network can reach the orchestrator.
+	v.SetDefault("orchestrator.bind", "127.0.0.1:8070")
 	v.SetDefault("orchestrator.auth_required", true)
 	v.SetDefault("orchestrator.api_key", "")
 	v.SetDefault("orchestrator.session_ttl_hours", 24)
@@ -220,7 +222,7 @@ func setDefaults(v *viper.Viper) {
 
 	// ML defaults
 	v.SetDefault("ml.api_port", 8919)
-	v.SetDefault("ml.bind_host", "0.0.0.0")
+	v.SetDefault("ml.bind_host", "127.0.0.1")
 	v.SetDefault("ml.binary_model", "models/cybershield_realpro_binary_ensemble_v0_3.joblib")
 	v.SetDefault("ml.family_model", "models/cybershield_realpro_attack_family_v0_3.joblib")
 	v.SetDefault("ml.anomaly_model", "models/cybershield_realpro_anomaly_baseline_v0_3.joblib")
@@ -245,7 +247,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("endpoint.honeypot_bind", "127.0.0.1")
 
 	// Network defaults
-	v.SetDefault("network.bind_host", "0.0.0.0")
+	v.SetDefault("network.bind_host", "127.0.0.1")
 	v.SetDefault("network.api_port", 8081)
 	v.SetDefault("network.interface", "eth0")
 	v.SetDefault("network.simulate", true)
@@ -338,7 +340,12 @@ func (cm *ConfigManager) applyEnvOverrides() {
 	}
 
 	// Bind address override
+	// Environment beats the config file. AEGIS_BIND_ADDR is the name used by
+	// the shipped Dockerfile and compose files: honor it too, otherwise
+	// containers silently bind to loopback while compose publishes 8080.
 	if bind := os.Getenv("AEGIS_BIND"); bind != "" {
+		cm.config.Bind = bind
+	} else if bind := os.Getenv("AEGIS_BIND_ADDR"); bind != "" {
 		cm.config.Bind = bind
 	}
 	if bind := os.Getenv("CYBERFORGE_BIND"); bind != "" && cm.config.Bind == "" {
@@ -415,7 +422,7 @@ func (cm *ConfigManager) applyDefaults() {
 		cm.config.SessionTTLHours = 24
 	}
 	if cm.config.Bind == "" {
-		cm.config.Bind = "0.0.0.0:8080"
+		cm.config.Bind = "127.0.0.1:8070"
 	}
 	if cm.config.LogLevel == "" {
 		cm.config.LogLevel = "info"

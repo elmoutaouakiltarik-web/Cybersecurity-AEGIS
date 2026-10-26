@@ -15,9 +15,12 @@ name: aegis-omni
 #   --profile infra        adds Redis + Suricata + Zeek + syslog
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# Every service shares the ingest secret: the orchestrator validates it and the
+# modules send it as X-AEGIS-INGEST-KEY when they publish events.
 x-common-env: &common-env
   AEGIS_LOG_LEVEL: ${AEGIS_LOG_LEVEL:-INFO}
   ORCHESTRATOR_URL: http://orchestrator:8080
+  AEGIS_INGEST_KEY: ${AEGIS_INGEST_KEY:?set AEGIS_INGEST_KEY in .env (openssl rand -hex 32)}
   TZ: ${TZ:-Europe/Rome}
 
 services:
@@ -49,7 +52,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: aegis
-      POSTGRES_PASSWORD: aegis
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: aegis
     ports:
       - "127.0.0.1:5432:5432"
@@ -87,9 +90,11 @@ services:
         condition: service_healthy
     environment:
       <<: *common-env
+      # 0.0.0.0 is required inside the container network so the modules can
+      # reach the orchestrator; the host-side port stays on loopback below.
       AEGIS_BIND_ADDR: 0.0.0.0:8080
       AEGIS_EVENT_STORE: /data/events.jsonl
-      AEGIS_DB_CONN: "postgres://aegis:aegis@postgres:5432/aegis?sslmode=disable"
+      AEGIS_DB_CONN: "postgres://${POSTGRES_USER:-aegis}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-aegis}?sslmode=disable"
       # Admin credentials (override these in .env or shell before `up`).
       AEGIS_ADMIN_USER: ${AEGIS_ADMIN_USER:-admin}
       AEGIS_ADMIN_PASSWORD: ${AEGIS_ADMIN_PASSWORD:?set AEGIS_ADMIN_PASSWORD in .env}
