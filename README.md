@@ -350,13 +350,21 @@ cd core/orchestrator && go build ./... && go vet ./... && go test ./...
 Keep the safety guarantees intact: no active exploitation, no writes to
 industrial equipment, no telemetry.
 
-## License
+## License and ownership
 
-Cybersecurity-AEGIS is released under **AGPL-3.0 + Commons Clause**.
+Cybersecurity-AEGIS is the original work and the **exclusive property of
+El Moutaouakil Tarik**, who holds the copyright. The license grants a right of
+use: it does not transfer ownership, assign copyright or grant title to any part
+of the project.
+
+Released under **AGPL-3.0 + Commons Clause** — full terms in [LICENSE](LICENSE),
+ownership and attribution in [NOTICE](NOTICE).
 
 - Free for personal, research and internal defensive use.
 - Commercial redistribution, OEM embedding and MSP multi-tenant use require a
-  commercial license — see [COMMERCIAL.md](COMMERCIAL.md).
+  written commercial license from the author — see [COMMERCIAL.md](COMMERCIAL.md).
+- The author's attribution must be preserved in every copy, fork and derivative
+  work.
 
 ## Acknowledgments
 

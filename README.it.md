@@ -202,11 +202,19 @@ Guida completa: [docs/industrial-site-assessment.md](docs/industrial-site-assess
 cd core/orchestrator && go build ./... && go vet ./... && go test ./...
 ```
 
-## Licenza
+## Licenza e proprietà
 
-**AGPL-3.0 + Commons Clause**. Uso personale, di ricerca e difensivo interno
-gratuito. Ridistribuzione commerciale, embedding OEM e uso MSP multi-tenant
-richiedono una licenza commerciale: vedi [COMMERCIAL.md](COMMERCIAL.md).
+Cybersecurity-AEGIS è opera originale e **proprietà esclusiva di El Moutaouakil
+Tarik**, che ne detiene il copyright. La licenza concede un diritto d'uso: non
+trasferisce la proprietà né assegna il copyright su alcuna parte del progetto.
+
+Rilasciato con **AGPL-3.0 + Commons Clause** — testo integrale in
+[LICENSE](LICENSE), proprietà e attribuzione in [NOTICE](NOTICE).
+
+- Uso personale, di ricerca e difensivo interno gratuito.
+- Ridistribuzione commerciale, embedding OEM e uso MSP multi-tenant richiedono
+  una licenza commerciale scritta dell'autore: vedi [COMMERCIAL.md](COMMERCIAL.md).
+- L'attribuzione all'autore va mantenuta in ogni copia, fork e opera derivata.
 
 ## Ringraziamenti
 

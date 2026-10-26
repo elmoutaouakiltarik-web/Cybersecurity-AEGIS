@@ -1,0 +1,48 @@
+Cybersecurity-AEGIS
+===================
+
+Copyright (C) 2026 El Moutaouakil Tarik
+All rights reserved.
+
+This product is the original work and the exclusive property of El Moutaouakil
+Tarik, its author and sole copyright holder. The project name, the source code,
+the documentation, the architecture, the detection content and the visual
+identity all belong to the author.
+
+Licensing grants rights of use only. It does not assign copyright, transfer
+ownership or grant title to the Software or to any part of it.
+
+
+License
+-------
+
+Cybersecurity-AEGIS is licensed under the GNU Affero General Public License,
+version 3 or later, together with the Commons Clause License Condition v1.0.
+The complete terms are in the LICENSE file.
+
+Commercial redistribution, OEM embedding and MSP multi-tenant deployment
+require a separate written commercial license from the copyright holder.
+See COMMERCIAL.md.
+
+
+Redistributions
+---------------
+
+Anyone who copies, forks or distributes this Software or a derivative work must:
+
+1. keep this NOTICE and the LICENSE file intact;
+2. preserve the copyright notice naming El Moutaouakil Tarik;
+3. state clearly any modification made;
+4. carry the Commons Clause condition with the Software.
+
+
+Third-party components
+----------------------
+
+Cybersecurity-AEGIS interoperates with, and in some deployments bundles,
+open-source projects that remain under their own licenses, including Wazuh,
+Suricata, Zeek, CrowdSec, MISP, OpenCTI, Sigma, Keycloak, step-ca, Greenbone,
+Velociraptor, open62541 and pymodbus.
+
+Nothing in this NOTICE changes the license of those components, and nothing in
+their licenses transfers ownership of Cybersecurity-AEGIS.

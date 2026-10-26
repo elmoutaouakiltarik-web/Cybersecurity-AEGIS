@@ -1,5 +1,14 @@
 # Cybersecurity-AEGIS — Commercial Overview
 
+Copyright (C) 2026 **El Moutaouakil Tarik** — all rights reserved.
+
+Cybersecurity-AEGIS is the exclusive property of its author, El Moutaouakil
+Tarik, who is the sole copyright holder. All commercial rights — including
+redistribution, OEM embedding, white-labelling and MSP multi-tenant use — are
+reserved to the author and are granted only through a written commercial
+license. Attribution to the author must remain visible in every commercial
+deployment.
+
 ## Product Identity
 
 **Cybersecurity-AEGIS** is the first personal, on-premise cybersecurity control plane that unifies IT endpoint defense, network monitoring, threat intelligence, AI-driven anomaly detection, and OT/ICS passive visibility in a single composable suite.
@@ -22,9 +31,13 @@
 
 ## Licensing Model
 
+The author retains ownership of the project in every tier. A license grants
+rights of use; it never transfers the project or its copyright.
+
 - **Community Edition**: AGPL-3.0 + Commons Clause — free for personal, research, and internal use.
-- **Commercial License**: Available for redistribution, OEM embedding, and MSP multi-tenant deployments. Contact for pricing.
+- **Commercial License**: required for redistribution, OEM embedding, and MSP multi-tenant deployments. Contact the author for pricing.
 - **Support Tiers**: Bronze (community forums), Silver (email support + quarterly updates), Gold (24/7 SLA + dedicated engineer).
+- **Attribution**: the copyright notice and the [NOTICE](NOTICE) file must be preserved in all deployments and derivative works.
 
 ## Competitive Differentiation
 
@@ -47,6 +60,9 @@
 
 ## Contact
 
-For partnership, licensing, and enterprise pilot programs:
-- Email: [your-email@example.com]
-- Web: [your-website.com]
+For partnership, licensing, and enterprise pilot programs, open an issue or
+send a message through the author's GitHub profile:
+
+- GitHub: [@elmoutaouakiltarik-web](https://github.com/elmoutaouakiltarik-web)
+- Repository: [Cybersecurity-AEGIS](https://github.com/elmoutaouakiltarik-web/Cybersecurity-AEGIS)
+- Security reports: see [SECURITY.md](SECURITY.md) (private advisory, not a public issue)
