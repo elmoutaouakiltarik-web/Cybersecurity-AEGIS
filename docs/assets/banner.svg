@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="340" viewBox="0 0 1280 340" role="img" aria-label="Cybersecurity-AEGIS — defensive security control plane">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#070d17"/>
+      <stop offset="55%" stop-color="#0b1626"/>
+      <stop offset="100%" stop-color="#0d1f33"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#1e3a5f" stroke-width="1" opacity="0.35"/>
+    </pattern>
+  </defs>
+
+  <rect width="1280" height="340" fill="url(#bg)"/>
+  <rect width="1280" height="340" fill="url(#grid)"/>
+  <ellipse cx="1050" cy="20" rx="420" ry="300" fill="url(#glow)"/>
+
+  <!-- Shield emblem -->
+  <g transform="translate(96,86)">
+    <path d="M84 4 L156 32 V90 C156 132 124 158 84 172 C44 158 12 132 12 90 V32 Z"
+          fill="#0b1b2b" stroke="url(#shield)" stroke-width="3"/>
+    <path d="M84 30 L136 50 V90 C136 120 114 140 84 152 C54 140 32 120 32 90 V50 Z"
+          fill="#0e2237" stroke="#1f4e6b" stroke-width="1.5"/>
+    <path d="M60 88 L78 106 L112 64" fill="none" stroke="url(#shield)" stroke-width="9"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="300" y="146" font-family="Segoe UI, Helvetica, Arial, sans-serif"
+        font-size="54" font-weight="700" fill="#e8f4ff" letter-spacing="1.5">Cybersecurity-AEGIS</text>
+  <text x="302" y="188" font-family="Segoe UI, Helvetica, Arial, sans-serif"
+        font-size="21" fill="#7fb3d5" letter-spacing="0.6">Defensive security control plane · vendor-neutral · OT/ICS aware</text>
+
+  <!-- Capability chips -->
+  <g font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="15" fill="#9fd4ea">
+    <g transform="translate(302,222)">
+      <rect width="116" height="32" rx="16" fill="#12283d" stroke="#245b78"/>
+      <text x="24" y="21">Go API</text>
+    </g>
+    <g transform="translate(430,222)">
+      <rect width="128" height="32" rx="16" fill="#12283d" stroke="#245b78"/>
+      <text x="22" y="21">ML / IDS</text>
+    </g>
+    <g transform="translate(570,222)">
+      <rect width="118" height="32" rx="16" fill="#12283d" stroke="#245b78"/>
+      <text x="20" y="21">SIEM</text>
+    </g>
+    <g transform="translate(700,222)">
+      <rect width="118" height="32" rx="16" fill="#12283d" stroke="#245b78"/>
+      <text x="20" y="21">SOAR</text>
+    </g>
+    <g transform="translate(830,222)">
+      <rect width="176" height="32" rx="16" fill="#12283d" stroke="#245b78"/>
+      <text x="20" y="21">OT / ICS passive</text>
+    </g>
+  </g>
+
+  <text x="96" y="298" font-family="Segoe UI, Helvetica, Arial, sans-serif"
+        font-size="14" fill="#4d7fa3" letter-spacing="0.4">Defensive-only · read-only by default · AGPL-3.0 + Commons Clause</text>
+</svg>
